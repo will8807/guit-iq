@@ -526,17 +526,17 @@ HEAR → LOCATE → PLAY → FEEDBACK → ADAPT
 - [x] **M0.11** Commit `PLAN.md`
 
 ### Milestone 1 — Audio Engine
-- [ ] **M1.1** Create `lib/music/notes.ts` — note names, MIDI mapping, enharmonic equivalence
-- [ ] **M1.2** Unit tests for `noteToMidi`, `midiToNote`, `isEnharmonic`
-- [ ] **M1.3** Create `lib/audio/engine.ts` — Tone.js singleton, `initAudio()`
-- [ ] **M1.4** Implement `playNote(note: string)`
-- [ ] **M1.5** Implement `playSequence(notes: string[], delay?: number)`
-- [ ] **M1.6** Implement `playChord(notes: string[])`
-- [ ] **M1.7** Implement `playFeedbackChime(type: 'correct' | 'incorrect')`
-- [ ] **M1.8** Guitar sample loading with synth fallback
-- [ ] **M1.9** Integration tests (mocked Tone.js): verify correct note names passed to sampler
-- [ ] **M1.10** Create `/dev/audio` test page — buttons to play C3, E3, G3, C major chord, P5 interval
-- [ ] **M1.11** Create `docs/manual-qa.md` — iOS/Android audio QA checklist
+- [x] **M1.1** Create `lib/music/notes.ts` — note names, MIDI mapping, enharmonic equivalence
+- [x] **M1.2** Unit tests for `noteToMidi`, `midiToNote`, `isEnharmonic`
+- [x] **M1.3** Create `lib/audio/engine.ts` — Tone.js singleton, `initAudio()`
+- [x] **M1.4** Implement `playNote(note: string)`
+- [x] **M1.5** Implement `playSequence(notes: string[], delay?: number)`
+- [x] **M1.6** Implement `playChord(notes: string[])`
+- [x] **M1.7** Implement `playFeedbackChime(type: 'correct' | 'incorrect')`
+- [x] **M1.8** Guitar sample loading with synth fallback
+- [x] **M1.9** Integration tests (mocked Tone.js): verify correct note names passed to sampler
+- [x] **M1.10** Create `/dev/audio` test page — buttons to play C3, E3, G3, C major chord, P5 interval
+- [x] **M1.11** Create `docs/manual-qa.md` — iOS/Android audio QA checklist
 - [ ] **M1.12** Manual QA on real devices
 
 ### Milestone 2 — Fretboard Input
