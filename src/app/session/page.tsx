@@ -6,6 +6,7 @@ import { initAudio, playNote, isAudioReady } from "@/lib/audio/engine";
 import Fretboard, { type FretHighlight } from "@/components/Fretboard";
 import ChallengePrompt from "@/components/ChallengePrompt";
 import ChallengeFeedback from "@/components/ChallengeFeedback";
+import { useOrientation, type FretboardLayout } from "@/hooks/useOrientation";
 import type { Difficulty } from "@/lib/challenges/findTheNote";
 
 export default function SessionPage() {
@@ -25,6 +26,16 @@ export default function SessionPage() {
 
   const [audioReady, setAudioReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+
+  // Orientation: auto-detect + manual override
+  const autoLayout = useOrientation();
+  const [layoutOverride, setLayoutOverride] = useState<FretboardLayout | null>(null);
+  const layout = layoutOverride ?? autoLayout;
+
+  function toggleLayout() {
+    // If already overridden, flip it; otherwise flip from auto
+    setLayoutOverride(layout === "portrait" ? "landscape" : "portrait");
+  }
 
   // ── Play the challenge note ────────────────────────────────────────────────
 
@@ -160,9 +171,19 @@ export default function SessionPage() {
       {/* Header */}
       <div className="flex items-center justify-between pt-2">
         <h1 className="text-lg font-bold">🎸 GuitIQ</h1>
-        <span className="text-sm text-zinc-400">
-          {score.correct}/{score.total}
-        </span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleLayout}
+            aria-label={`Switch to ${layout === "portrait" ? "landscape" : "portrait"} layout`}
+            className="text-zinc-400 hover:text-zinc-200 transition-colors text-lg"
+            title={layout === "portrait" ? "Switch to landscape" : "Switch to portrait"}
+          >
+            {layout === "portrait" ? "⇄" : "⇅"}
+          </button>
+          <span className="text-sm text-zinc-400">
+            {score.correct}/{score.total}
+          </span>
+        </div>
       </div>
 
       {/* Prompt or Feedback */}
@@ -183,6 +204,7 @@ export default function SessionPage() {
           onSelect={handleFretboardSelect}
           highlights={highlights}
           disabled={phase !== "awaiting"}
+          layout={layout}
         />
       </div>
     </main>
