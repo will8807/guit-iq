@@ -130,9 +130,8 @@ export default function Fretboard({
                       isNut
                         ? "border-b-4 border-b-zinc-300"
                         : "border-b border-b-zinc-600",
-                      // Highlight colour kept on the button for test assertions
                       highlight
-                        ? HIGHLIGHT_CLASSES[highlight.variant]
+                        ? ""
                         : "hover:bg-zinc-700 active:bg-zinc-600",
                       disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
                     ].join(" ")}
@@ -140,7 +139,7 @@ export default function Fretboard({
                     {highlight && (
                       <span
                         aria-hidden="true"
-                        className="w-7 h-7 rounded-full z-10 block bg-white/20"
+                        className={`w-7 h-7 rounded-full z-10 block ${HIGHLIGHT_CLASSES[highlight.variant]}`}
                       />
                     )}
                   </button>
