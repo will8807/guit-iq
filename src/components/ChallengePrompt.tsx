@@ -19,9 +19,9 @@ export default function ChallengePrompt({
   onReplay,
 }: ChallengePromptProps) {
   return (
-    <div className="flex flex-col items-center gap-6 py-8">
-      <p className="text-xl font-semibold text-white text-center">
-        {isPlaying ? "🎵 Listen…" : "Find this note on the fretboard"}
+    <div className="flex items-center gap-3 py-2">
+      <p className="text-sm font-semibold text-white">
+        {isPlaying ? "🎵 Listen…" : "Find this note"}
       </p>
 
       <button
@@ -29,8 +29,8 @@ export default function ChallengePrompt({
         disabled={isPlaying}
         aria-label="Replay note"
         className={[
-          "flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-white",
-          "transition-colors",
+          "ml-auto flex items-center gap-1.5 px-4 py-2 rounded-full font-semibold text-white text-sm",
+          "transition-colors shrink-0",
           isPlaying
             ? "bg-zinc-700 opacity-50 cursor-not-allowed"
             : "bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700",
