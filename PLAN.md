@@ -505,25 +505,25 @@ HEAR → LOCATE → PLAY → FEEDBACK → ADAPT
 ## 7. Living Implementation Checklist
 
 ### Milestone 0 — Repo + Tooling + CI
-- [ ] **M0.1** Scaffold Next.js 14 app (`pnpm create next-app@latest`)
-- [ ] **M0.2** Configure Tailwind CSS v3
-- [ ] **M0.3** Install Zustand
-- [ ] **M0.4** Install Tone.js
-- [ ] **M0.5** Configure Vitest + React Testing Library
-  - [ ] `vitest.config.ts`
-  - [ ] `setupTests.ts` with `@testing-library/jest-dom`
-  - [ ] One passing placeholder test
-- [ ] **M0.6** Configure Playwright
-  - [ ] `playwright.config.ts`
-  - [ ] One passing smoke test (visit `/`, assert page loads)
-- [ ] **M0.7** ESLint + Prettier configuration
-- [ ] **M0.8** TypeScript strict mode
-- [ ] **M0.9** GitHub Actions CI (`.github/workflows/ci.yml`)
-  - [ ] Lint + type-check job
-  - [ ] Unit/component test job (Vitest)
-  - [ ] E2E test job (Playwright)
-- [ ] **M0.10** Link Vercel project, confirm deploy
-- [ ] **M0.11** Commit `PLAN.md`
+- [x] **M0.1** Scaffold Next.js 14 app (`pnpm create next-app@latest`)
+- [x] **M0.2** Configure Tailwind CSS v3
+- [x] **M0.3** Install Zustand
+- [x] **M0.4** Install Tone.js
+- [x] **M0.5** Configure Vitest + React Testing Library
+  - [x] `vitest.config.ts`
+  - [x] `setupTests.ts` with `@testing-library/jest-dom`
+  - [x] One passing placeholder test
+- [x] **M0.6** Configure Playwright
+  - [x] `playwright.config.ts`
+  - [x] One passing smoke test (visit `/`, assert page loads)
+- [x] **M0.7** ESLint + Prettier configuration
+- [x] **M0.8** TypeScript strict mode
+- [x] **M0.9** GitHub Actions CI (`.github/workflows/ci.yml`)
+  - [x] Lint + type-check job
+  - [x] Unit/component test job (Vitest)
+  - [x] E2E test job (Playwright)
+- [x] **M0.10** Link Vercel project, confirm deploy
+- [x] **M0.11** Commit `PLAN.md`
 
 ### Milestone 1 — Audio Engine
 - [ ] **M1.1** Create `lib/music/notes.ts` — note names, MIDI mapping, enharmonic equivalence
