@@ -46,8 +46,8 @@ interface FretboardProps {
 
 // Portrait: strings as columns left→right (low E first)
 const STRINGS_PORTRAIT = [6, 5, 4, 3, 2, 1] as const;
-// Landscape: strings as rows top→bottom (low E first)
-const STRINGS_LANDSCAPE = [6, 5, 4, 3, 2, 1] as const;
+// Landscape: strings as rows top→bottom (high e first, low E at bottom)
+const STRINGS_LANDSCAPE = [1, 2, 3, 4, 5, 6] as const;
 const FRETS = Array.from({ length: 13 }, (_, i) => i); // 0–12
 
 const STRING_NAMES: Record<number, string> = { 1: "e", 2: "B", 3: "G", 4: "D", 5: "A", 6: "E" };
