@@ -560,17 +560,17 @@ HEAR → LOCATE → PLAY → FEEDBACK → ADAPT
 - [ ] **M2.7** Manual mobile QA — touch targets, scroll, layout on 375px
 
 ### Milestone 3 — Find the Note Challenge
-- [ ] **M3.1** Create `lib/challenges/findTheNote.ts`
-  - [ ] `generateFindTheNoteChallenge(difficulty): FindTheNoteChallenge`
-  - [ ] `evaluateFindTheNote(challenge, answer): EvaluationResult`
-- [ ] **M3.2** Unit tests: generation produces valid note in range
-- [ ] **M3.3** Unit tests: evaluation accepts all valid positions, rejects wrong ones
-- [ ] **M3.4** Create `store/sessionStore.ts` (Zustand) — single-challenge state machine
-- [ ] **M3.5** Unit tests for session store transitions
-- [ ] **M3.6** Build challenge UI components
-  - [ ] `<ChallengePrompt>` — "Listen and find this note" + replay button
-  - [ ] `<ChallengeFeedback>` — correct/incorrect + revealed position
-- [ ] **M3.7** Build `/session` page — plays audio → accepts fretboard tap → shows feedback
+- [x] **M3.1** Create `lib/challenges/findTheNote.ts`
+  - [x] `generateChallenge(difficulty): FindTheNoteChallenge`
+  - [x] `evaluateAnswer(challenge, string, fret): EvaluationResult`
+- [x] **M3.2** Unit tests: generation produces valid note in range
+- [x] **M3.3** Unit tests: evaluation accepts all valid positions, rejects wrong ones
+- [x] **M3.4** Create `store/sessionStore.ts` (Zustand) — single-challenge state machine
+- [x] **M3.5** Unit tests for session store transitions
+- [x] **M3.6** Build challenge UI components
+  - [x] `<ChallengePrompt>` — "Listen and find this note" + replay button
+  - [x] `<ChallengeFeedback>` — correct/incorrect + revealed position
+- [x] **M3.7** Build `/session` page — plays audio → accepts fretboard tap → shows feedback
 - [ ] **M3.8** Build landing page with "Start Session" CTA → navigates to `/session`
 - [ ] **M3.9** Component tests for challenge UI
 - [ ] **M3.10** E2E test: complete 3 "Find the Note" challenges
