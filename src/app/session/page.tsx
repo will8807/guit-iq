@@ -16,16 +16,20 @@ export default function SessionPage() {
     lastResult,
     score,
     difficulty,
+    streak,
+    promotedDifficulty,
     startChallenge,
     noteReady,
     submitAnswer,
     nextChallenge,
     setDifficulty,
+    clearPromotion,
     reset,
   } = useSessionStore();
 
   const [audioReady, setAudioReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [toastVisible, setToastVisible] = useState(false);
 
   // Orientation: auto-detect + manual override
   const autoLayout = useOrientation();
@@ -53,6 +57,18 @@ export default function SessionPage() {
       playChallenge();
     }
   }, [phase, playChallenge]);
+
+  // Show promotion toast for 3 seconds then clear
+  useEffect(() => {
+    if (promotedDifficulty) {
+      setToastVisible(true);
+      const timer = setTimeout(() => {
+        setToastVisible(false);
+        clearPromotion();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [promotedDifficulty, clearPromotion]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -168,10 +184,26 @@ export default function SessionPage() {
   // Step 3: active challenge (playing / awaiting / feedback)
   return (
     <main className="min-h-screen w-full bg-zinc-900 text-white flex flex-col p-4 gap-4 max-w-2xl mx-auto">
+      {/* Promotion toast */}
+      {toastVisible && promotedDifficulty && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-indigo-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg text-sm animate-bounce"
+        >
+          🎉 Levelled up to <span className="capitalize">{promotedDifficulty}</span>!
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between pt-2">
         <h1 className="text-lg font-bold">🎸 GuitIQ</h1>
         <div className="flex items-center gap-3">
+          {streak >= 2 && (
+            <span className="text-sm text-amber-400 font-semibold" aria-label={`${streak} streak`}>
+              🔥 {streak}
+            </span>
+          )}
           <button
             onClick={toggleLayout}
             aria-label={`Switch to ${layout === "portrait" ? "landscape" : "portrait"} layout`}

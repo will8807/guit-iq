@@ -43,6 +43,15 @@ export interface EvaluationResult {
   targetNote: string;
 }
 
+/**
+ * Per-note accuracy stats, keyed by canonical note name (e.g. "A3").
+ * Used by the adaptive weighted selection algorithm.
+ */
+export interface NoteStats {
+  attempts: number;
+  correct: number;
+}
+
 // ─── Difficulty config ────────────────────────────────────────────────────────
 
 interface DifficultyConfig {
@@ -72,49 +81,126 @@ const DIFFICULTY_CONFIG: Record<Difficulty, DifficultyConfig> = {
   },
 };
 
-// ─── Generate ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Generate a new Find the Note challenge.
- *
- * Picks a random note that appears somewhere on the fretboard within the
- * difficulty's fret range, then records all valid positions for it.
+ * Build a filtered MIDI candidate pool for the given difficulty.
  */
-export function generateChallenge(
-  difficulty: Difficulty = "easy"
-): FindTheNoteChallenge {
+function buildCandidatePool(difficulty: Difficulty): Set<number> {
   const config = DIFFICULTY_CONFIG[difficulty];
-  let candidatePool = getMidiRange(config.minFret, config.maxFret);
-
+  let pool = getMidiRange(config.minFret, config.maxFret);
   if (config.midiFilter) {
-    candidatePool = new Set(
-      Array.from(candidatePool).filter(config.midiFilter)
-    );
+    pool = new Set(Array.from(pool).filter(config.midiFilter));
   }
-
-  if (candidatePool.size === 0) {
+  if (pool.size === 0) {
     throw new Error(`No candidate notes for difficulty "${difficulty}"`);
   }
+  return pool;
+}
 
-  const targetMidi = randomFromSet(candidatePool);
+/**
+ * Build a FindTheNoteChallenge from a chosen MIDI value + difficulty.
+ */
+function challengeFromMidi(
+  targetMidi: number,
+  difficulty: Difficulty
+): FindTheNoteChallenge {
+  const config = DIFFICULTY_CONFIG[difficulty];
   const targetNote = normalizeNote(midiToNote(targetMidi));
-
-  // Valid positions: all fretboard spots that produce this note AND are within fret range
   const allPositions = getAllPositionsForNote(targetNote);
   const validPositions = allPositions.filter(
     (p) => p.fret >= config.minFret && p.fret <= config.maxFret
   );
-
   return { targetMidi, targetNote, validPositions, difficulty };
 }
+
+// ─── Generate (uniform) ───────────────────────────────────────────────────────
+
+/**
+ * Generate a new Find the Note challenge using uniform random selection.
+ */
+export function generateChallenge(
+  difficulty: Difficulty = "easy"
+): FindTheNoteChallenge {
+  const pool = buildCandidatePool(difficulty);
+  return challengeFromMidi(randomFromSet(pool), difficulty);
+}
+
+// ─── Generate (adaptive / weighted) ──────────────────────────────────────────
+
+/**
+ * Compute a selection weight for a note given its historical stats.
+ *
+ * Notes never seen before get weight 1.0 (neutral).
+ * Notes answered incorrectly more often get a higher weight (seen more).
+ * Notes answered correctly most of the time get a lower weight (seen less).
+ *
+ * Weight formula:  w = BASE_WEIGHT + (1 - accuracy) * BOOST
+ *   where accuracy = correct / attempts (clamped to [0, 1])
+ *
+ * This means:
+ *   - 0% accuracy  → weight = 0.2 + 1.0 * 1.8 = 2.0  (seen ~10× more than a note at 100%)
+ *   - 50% accuracy → weight = 0.2 + 0.5 * 1.8 = 1.1
+ *   - 100% accuracy → weight = 0.2 + 0.0 * 1.8 = 0.2
+ *   - unseen        → weight = 1.0
+ */
+const BASE_WEIGHT = 0.2;
+const BOOST = 1.8;
+
+export function noteWeight(stats: NoteStats | undefined): number {
+  if (!stats || stats.attempts === 0) return 1.0;
+  const accuracy = Math.min(1, stats.correct / stats.attempts);
+  return BASE_WEIGHT + (1 - accuracy) * BOOST;
+}
+
+/**
+ * Generate a challenge using adaptive weighted random selection.
+ *
+ * Notes the user finds harder (lower accuracy) are drawn more frequently.
+ * Falls back to uniform selection if noteStats is empty.
+ */
+export function generateWeightedChallenge(
+  difficulty: Difficulty = "easy",
+  noteStats: Record<string, NoteStats> = {}
+): FindTheNoteChallenge {
+  const pool = buildCandidatePool(difficulty);
+  const candidates = Array.from(pool);
+
+  // Build weight array — map MIDI → note name → weight
+  const weights = candidates.map((midi) => {
+    const note = normalizeNote(midiToNote(midi));
+    return noteWeight(noteStats[note]);
+  });
+
+  // Weighted random draw
+  const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+  let r = Math.random() * totalWeight;
+  let chosen: number = candidates[candidates.length - 1]!; // fallback
+  for (let i = 0; i < candidates.length; i++) {
+    r -= weights[i]!;
+    if (r <= 0) {
+      chosen = candidates[i]!;
+      break;
+    }
+  }
+
+  return challengeFromMidi(chosen, difficulty);
+}
+
+// ─── Difficulty progression ───────────────────────────────────────────────────
+
+/** Number of consecutive correct answers needed to advance difficulty */
+export const STREAK_THRESHOLD = 5;
+
+export const NEXT_DIFFICULTY: Partial<Record<Difficulty, Difficulty>> = {
+  easy: "medium",
+  medium: "hard",
+};
 
 // ─── Evaluate ─────────────────────────────────────────────────────────────────
 
 /**
  * Evaluate a user's fretboard tap against the challenge.
- *
- * Correct if the tapped position is in the validPositions list OR
- * produces an enharmonic equivalent of the target note.
  */
 export function evaluateAnswer(
   challenge: FindTheNoteChallenge,

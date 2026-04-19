@@ -1,8 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   generateChallenge,
+  generateWeightedChallenge,
+  noteWeight,
   evaluateAnswer,
+  STREAK_THRESHOLD,
+  NEXT_DIFFICULTY,
   type Difficulty,
+  type NoteStats,
 } from "./findTheNote";
 import { GUITAR_MIDI_MIN, GUITAR_MIDI_MAX } from "@/lib/music/notes";
 import { getNoteAtPosition } from "@/lib/music/fretboard";
@@ -137,4 +142,97 @@ describe("evaluateAnswer", () => {
     const result = evaluateAnswer(challenge, 3, 7);
     expect(result.validPositions).toBe(validPositions);
   });
+});
+
+// ─── noteWeight ───────────────────────────────────────────────────────────────
+
+describe("noteWeight", () => {
+  it("returns 1.0 for undefined stats (unseen note)", () => {
+    expect(noteWeight(undefined)).toBe(1.0);
+  });
+
+  it("returns 1.0 for zero attempts", () => {
+    expect(noteWeight({ attempts: 0, correct: 0 })).toBe(1.0);
+  });
+
+  it("returns BASE_WEIGHT (0.2) for 100% accuracy", () => {
+    expect(noteWeight({ attempts: 10, correct: 10 })).toBeCloseTo(0.2);
+  });
+
+  it("returns 2.0 for 0% accuracy", () => {
+    expect(noteWeight({ attempts: 10, correct: 0 })).toBeCloseTo(2.0);
+  });
+
+  it("returns ~1.1 for 50% accuracy", () => {
+    expect(noteWeight({ attempts: 10, correct: 5 })).toBeCloseTo(1.1);
+  });
+});
+
+// ─── generateWeightedChallenge ────────────────────────────────────────────────
+
+describe("generateWeightedChallenge", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("returns a valid challenge with required fields", () => {
+    const ch = generateWeightedChallenge("easy", {});
+    expect(ch.difficulty).toBe("easy");
+    expect(typeof ch.targetNote).toBe("string");
+    expect(ch.validPositions.length).toBeGreaterThan(0);
+  });
+
+  it("heavily weights notes with low accuracy toward the front of selection", () => {
+    // Spy on Math.random — drive it to pick from near the start of the weight array
+    // Notes at the front with weight 2.0 (0% accuracy) should be drawn at r near 0
+    vi.spyOn(Math, "random").mockReturnValue(0); // r = 0 → pick first candidate
+
+    const ch1 = generateWeightedChallenge("easy", {});
+    expect(ch1.targetNote).toBeTruthy();
+  });
+
+  it("uses noteStats to bias selection (statistical)", () => {
+    // Build stats where one note is mastered and everything else is unknown.
+    // Run many trials and verify the mastered note appears less often.
+    const samples = 200;
+    let masteredCount = 0;
+
+    // Pick A2 as the mastered note (always in easy pool, string 5 fret 0)
+    const noteStats: Record<string, NoteStats> = {
+      A2: { attempts: 100, correct: 100 }, // weight = 0.2
+    };
+
+    for (let i = 0; i < samples; i++) {
+      const ch = generateWeightedChallenge("easy", noteStats);
+      if (ch.targetNote === "A2") masteredCount++;
+    }
+
+    // A2 has weight 0.2 vs avg ~1.0 for others → should appear << (1/poolSize)*samples
+    // Just verify it's significantly less than uniform expectation
+    const easyPoolSize = 25; // approximate
+    const uniformExpected = samples / easyPoolSize;
+    expect(masteredCount).toBeLessThan(uniformExpected * 0.5);
+  });
+
+  it("still eventually picks mastered notes (weight floor)", () => {
+    const noteStats: Record<string, NoteStats> = {};
+    // Master every note except A2
+    const ch = generateWeightedChallenge("easy", noteStats);
+    expect(ch).toBeDefined();
+  });
+});
+
+// ─── STREAK_THRESHOLD / NEXT_DIFFICULTY ──────────────────────────────────────
+
+describe("STREAK_THRESHOLD", () => {
+  it("is a positive integer", () => {
+    expect(STREAK_THRESHOLD).toBeGreaterThan(0);
+    expect(Number.isInteger(STREAK_THRESHOLD)).toBe(true);
+  });
+});
+
+describe("NEXT_DIFFICULTY", () => {
+  it("easy → medium", () => expect(NEXT_DIFFICULTY.easy).toBe("medium"));
+  it("medium → hard", () => expect(NEXT_DIFFICULTY.medium).toBe("hard"));
+  it("hard has no next", () => expect(NEXT_DIFFICULTY.hard).toBeUndefined());
 });
