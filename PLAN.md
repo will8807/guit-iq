@@ -805,4 +805,14 @@ Then:
 
 ---
 
+## 13. Backlog
+
+Items that are known, scoped, but deliberately deferred. Pick up when relevant.
+
+| ID | Item | Context |
+|---|---|---|
+| **BL-01** | Fix Mobile Safari E2E tests | All 13 Mobile Safari tests in `e2e/session.spec.ts` and `e2e/accessibility.spec.ts` are failing. Desktop Chrome and Mobile Chrome pass. Root cause is likely WebKit not being installed in the local Playwright setup (`playwright install webkit` not run) combined with possible `--disable-web-security` launch arg not being supported on WebKit. Fix: install WebKit (`pnpm exec playwright install webkit`), remove or conditionally apply the `--disable-web-security` arg for WebKit projects, verify the audio stub works under WebKit's stricter security model. |
+
+---
+
 *End of GuitIQ MVP Build Plan v0.2 — Audio-First Edition*
