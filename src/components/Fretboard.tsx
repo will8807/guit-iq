@@ -42,7 +42,9 @@ const HIGHLIGHT_CLASSES: Record<HighlightVariant, string> = {
   hint: "bg-yellow-400",
 };
 
-const NUT_MARKER_FRETS = new Set([3, 5, 7, 9, 12]);
+const SINGLE_DOT_FRETS = new Set([3, 5, 7, 9]);
+// 12th fret dots sit between B/G (after string 2) and between D/A (after string 4)
+const DOUBLE_DOT_AFTER_STRINGS = new Set([2, 4]);
 
 function getHighlight(
   highlights: FretHighlight[],
@@ -90,60 +92,97 @@ export default function Fretboard({
         ))}
       </div>
 
-      {/* String rows */}
+      {/* String rows, with a dot row inserted between strings 3 and 4 */}
       {STRINGS.map((string) => (
-        <div key={string} role="row" className="flex items-center mb-1">
-          {/* String number label (screen-reader only) */}
-          <span className="sr-only">String {string}</span>
-          {/* Visual string line indicator */}
-          <div
-            aria-hidden="true"
-            className="w-6 shrink-0 text-center text-[10px] text-zinc-600"
-          >
-            {string}
+        <div key={string}>
+          <div role="row" className="flex items-center mb-1">
+            {/* String number label (screen-reader only) */}
+            <span className="sr-only">String {string}</span>
+            {/* Visual string line indicator */}
+            <div
+              aria-hidden="true"
+              className="w-6 shrink-0 text-center text-[10px] text-zinc-600"
+            >
+              {string}
+            </div>
+
+            {FRETS.map((fret) => {
+              const highlight = getHighlight(highlights, string, fret);
+              const isOpen = fret === 0;
+
+              return (
+                <button
+                  key={fret}
+                  role="gridcell"
+                  aria-label={`String ${string}, fret ${fret}`}
+                  aria-disabled={disabled}
+                  onClick={() => handleTap(string, fret)}
+                  className={[
+                    "flex-1 h-10 relative flex items-center justify-center",
+                    "border-r border-zinc-700",
+                    isOpen
+                      ? "border-l-4 border-l-zinc-300" // nut
+                      : "border-l border-zinc-700",
+                    // String line through the middle
+                    "before:absolute before:inset-y-1/2 before:inset-x-0 before:h-px before:bg-zinc-500",
+                    highlight
+                      ? `${HIGHLIGHT_CLASSES[highlight.variant]} before:hidden rounded-full`
+                      : "hover:bg-zinc-700 active:bg-zinc-600",
+                    disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
+                  ].join(" ")}
+                >
+                  {highlight && (
+                    <span
+                      aria-hidden="true"
+                      className="w-4 h-4 rounded-full z-10 block"
+                    />
+                  )}
+                </button>
+              );
+            })}
           </div>
 
-          {FRETS.map((fret) => {
-            const highlight = getHighlight(highlights, string, fret);
-            const isOpen = fret === 0;
-            const hasDot = NUT_MARKER_FRETS.has(fret) && string === 3;
+          {/* Single-dot row — between strings 3 (G) and 4 (D) */}
+          {string === 3 && (
+            <div aria-hidden="true" className="flex items-center mb-1">
+              <div className="w-6 shrink-0" />
+              {FRETS.map((fret) => (
+                <div
+                  key={fret}
+                  className={[
+                    "flex-1 h-4 flex items-center justify-center",
+                    "border-r border-zinc-700",
+                    fret === 0 ? "border-l-4 border-l-zinc-300" : "border-l border-zinc-700",
+                  ].join(" ")}
+                >
+                  {SINGLE_DOT_FRETS.has(fret) && (
+                    <span className="w-2 h-2 rounded-full bg-zinc-300" />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
-            return (
-              <button
-                key={fret}
-                role="gridcell"
-                aria-label={`String ${string}, fret ${fret}`}
-                aria-disabled={disabled}
-                onClick={() => handleTap(string, fret)}
-                className={[
-                  "flex-1 h-10 relative flex items-center justify-center",
-                  "border-r border-zinc-700",
-                  isOpen
-                    ? "border-l-4 border-l-zinc-300" // nut
-                    : "border-l border-zinc-700",
-                  // String line through the middle
-                  "before:absolute before:inset-y-1/2 before:inset-x-0 before:h-px before:bg-zinc-500",
-                  highlight
-                    ? `${HIGHLIGHT_CLASSES[highlight.variant]} before:hidden rounded-full`
-                    : "hover:bg-zinc-700 active:bg-zinc-600",
-                  disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
-                ].join(" ")}
-              >
-                {hasDot && !highlight && (
-                  <span
-                    aria-hidden="true"
-                    className="w-2 h-2 rounded-full bg-zinc-500 z-10"
-                  />
-                )}
-                {highlight && (
-                  <span
-                    aria-hidden="true"
-                    className="w-4 h-4 rounded-full z-10 block"
-                  />
-                )}
-              </button>
-            );
-          })}
+          {/* 12th-fret dot rows — between B/G (after string 2) and D/A (after string 4) */}
+          {DOUBLE_DOT_AFTER_STRINGS.has(string) && (
+            <div aria-hidden="true" className="flex items-center mb-1">
+              <div className="w-6 shrink-0" />
+              {FRETS.map((fret) => (
+                <div
+                  key={fret}
+                  className={[
+                    "flex-1 h-4 flex items-center justify-center",
+                    "border-r border-zinc-700",
+                    fret === 0 ? "border-l-4 border-l-zinc-300" : "border-l border-zinc-700",
+                  ].join(" ")}
+                >
+                  {fret === 12 && (
+                    <span className="w-2 h-2 rounded-full bg-zinc-300" />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ))}
     </div>
