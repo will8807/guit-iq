@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { useSessionStore } from "./sessionStore";
+import { useSessionStore, SESSION_LENGTH } from "./sessionStore";
 import { STREAK_THRESHOLD } from "@/lib/challenges/findTheNote";
 
 // Reset store between tests
@@ -346,5 +346,136 @@ describe("auto-promotion", () => {
     useSessionStore.getState().submitAnswer(pos.string, pos.fret);
     expect(useSessionStore.getState().difficulty).toBe("hard");
     expect(useSessionStore.getState().promotedDifficulty).toBeNull();
+  });
+});
+
+// ─── M4.5: session completion ──────────────────────────────────────────────────
+
+/** Helper: play through one full challenge (start → noteReady → submitAnswer → nextChallenge) */
+function playOneChallenge() {
+  useSessionStore.getState().startChallenge();
+  useSessionStore.getState().noteReady();
+  const { challenge } = useSessionStore.getState();
+  // Use first valid position (correct answer) so we can also test bestStreak
+  const pos = challenge!.validPositions[0]!;
+  useSessionStore.getState().submitAnswer(pos.string, pos.fret);
+  useSessionStore.getState().nextChallenge();
+}
+
+describe("SESSION_LENGTH constant", () => {
+  it("is a positive integer", () => {
+    expect(SESSION_LENGTH).toBeGreaterThan(0);
+    expect(Number.isInteger(SESSION_LENGTH)).toBe(true);
+  });
+});
+
+describe("session completion", () => {
+  it("stays in idle after fewer than SESSION_LENGTH challenges", () => {
+    for (let i = 0; i < SESSION_LENGTH - 1; i++) playOneChallenge();
+    expect(useSessionStore.getState().phase).toBe("idle");
+  });
+
+  it("transitions to 'complete' after SESSION_LENGTH challenges", () => {
+    for (let i = 0; i < SESSION_LENGTH; i++) playOneChallenge();
+    expect(useSessionStore.getState().phase).toBe("complete");
+  });
+
+  it("startChallenge is a no-op when phase is 'complete'", () => {
+    for (let i = 0; i < SESSION_LENGTH; i++) playOneChallenge();
+    expect(useSessionStore.getState().phase).toBe("complete");
+    useSessionStore.getState().startChallenge();
+    expect(useSessionStore.getState().phase).toBe("complete");
+  });
+
+  it("reset() brings the store back to idle from complete", () => {
+    for (let i = 0; i < SESSION_LENGTH; i++) playOneChallenge();
+    useSessionStore.getState().reset();
+    expect(useSessionStore.getState().phase).toBe("idle");
+    expect(useSessionStore.getState().score).toEqual({ correct: 0, total: 0 });
+  });
+});
+
+describe("bestStreak tracking", () => {
+  it("starts at 0", () => {
+    expect(useSessionStore.getState().bestStreak).toBe(0);
+  });
+
+  it("bestStreak equals streak after a run of correct answers", () => {
+    useSessionStore.getState().startChallenge();
+    useSessionStore.getState().noteReady();
+    const { challenge } = useSessionStore.getState();
+    const pos = challenge!.validPositions[0]!;
+    useSessionStore.getState().submitAnswer(pos.string, pos.fret);
+    expect(useSessionStore.getState().bestStreak).toBe(1);
+  });
+
+  it("bestStreak does not decrease when streak resets", () => {
+    // Answer correctly once (streak 1, bestStreak 1)
+    useSessionStore.getState().startChallenge();
+    useSessionStore.getState().noteReady();
+    const { challenge: c1 } = useSessionStore.getState();
+    const pos = c1!.validPositions[0]!;
+    useSessionStore.getState().submitAnswer(pos.string, pos.fret);
+    expect(useSessionStore.getState().bestStreak).toBe(1);
+
+    // Answer incorrectly (streak 0, bestStreak still 1)
+    useSessionStore.getState().nextChallenge();
+    useSessionStore.getState().startChallenge();
+    useSessionStore.getState().noteReady();
+    const invalid = findInvalidPosition(
+      useSessionStore.getState().challenge!.validPositions
+    );
+    useSessionStore.getState().submitAnswer(invalid.string, invalid.fret);
+    expect(useSessionStore.getState().streak).toBe(0);
+    expect(useSessionStore.getState().bestStreak).toBe(1);
+  });
+
+  it("reset() clears bestStreak", () => {
+    useSessionStore.getState().startChallenge();
+    useSessionStore.getState().noteReady();
+    const { challenge } = useSessionStore.getState();
+    const pos = challenge!.validPositions[0]!;
+    useSessionStore.getState().submitAnswer(pos.string, pos.fret);
+    useSessionStore.getState().reset();
+    expect(useSessionStore.getState().bestStreak).toBe(0);
+  });
+});
+
+describe("sessionStartTime tracking", () => {
+  it("is null initially", () => {
+    expect(useSessionStore.getState().sessionStartTime).toBeNull();
+  });
+
+  it("is set when the first challenge starts", () => {
+    const before = Date.now();
+    useSessionStore.getState().startChallenge();
+    const after = Date.now();
+    const t = useSessionStore.getState().sessionStartTime;
+    expect(t).not.toBeNull();
+    expect(t!).toBeGreaterThanOrEqual(before);
+    expect(t!).toBeLessThanOrEqual(after);
+  });
+
+  it("is not overwritten when subsequent challenges start", () => {
+    useSessionStore.getState().startChallenge();
+    const firstTime = useSessionStore.getState().sessionStartTime;
+
+    // Complete first challenge and start second
+    useSessionStore.getState().noteReady();
+    const { challenge } = useSessionStore.getState();
+    useSessionStore.getState().submitAnswer(
+      challenge!.validPositions[0]!.string,
+      challenge!.validPositions[0]!.fret
+    );
+    useSessionStore.getState().nextChallenge();
+    useSessionStore.getState().startChallenge();
+
+    expect(useSessionStore.getState().sessionStartTime).toBe(firstTime);
+  });
+
+  it("reset() clears sessionStartTime", () => {
+    useSessionStore.getState().startChallenge();
+    useSessionStore.getState().reset();
+    expect(useSessionStore.getState().sessionStartTime).toBeNull();
   });
 });

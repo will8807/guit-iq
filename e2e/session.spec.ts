@@ -148,3 +148,117 @@ test.describe("Session flow", () => {
     await expect(page.getByText(/\/ 2/)).toBeVisible();
   });
 });
+
+// ─── M4.5: session completion screen ─────────────────────────────────────────
+
+test.describe("session completion", () => {
+  test.beforeEach(async ({ page }) => {
+    await stubAudio(page);
+  });
+
+  /**
+   * Helper: from the difficulty-picker screen (after audio init), complete one
+   * full challenge by tapping any fretboard cell and pressing Next →.
+   */
+  async function completeOneChallenge(page: import("@playwright/test").Page) {
+    // Wait for fretboard to become enabled
+    const firstCell = page.getByRole("gridcell").first();
+    await expect(firstCell).not.toHaveAttribute("aria-disabled", "true", {
+      timeout: 10_000,
+    });
+    await firstCell.click();
+    // Wait for feedback
+    await expect(
+      page.getByText(/correct!/i).or(page.getByText(/not quite/i))
+    ).toBeVisible({ timeout: 5000 });
+    await page.getByRole("button", { name: "Next →" }).click();
+  }
+
+  test("completion screen appears after SESSION_LENGTH challenges", async ({
+    page,
+  }) => {
+    await page.goto("/session");
+    // Init audio
+    await page.getByRole("button", { name: /start/i }).click();
+    // Difficulty picker → Play
+    await expect(page.getByRole("button", { name: /play/i })).toBeVisible({
+      timeout: 5000,
+    });
+    await page.getByRole("button", { name: /play/i }).click();
+
+    // Complete 8 challenges
+    for (let i = 0; i < 8; i++) {
+      await completeOneChallenge(page);
+    }
+
+    // Completion screen should be visible
+    await expect(
+      page.getByRole("heading", { name: /session complete/i })
+    ).toBeVisible({ timeout: 5000 });
+  });
+
+  test("completion screen shows score and accuracy", async ({ page }) => {
+    await page.goto("/session");
+    await page.getByRole("button", { name: /start/i }).click();
+    await expect(page.getByRole("button", { name: /play/i })).toBeVisible({
+      timeout: 5000,
+    });
+    await page.getByRole("button", { name: /play/i }).click();
+
+    for (let i = 0; i < 8; i++) {
+      await completeOneChallenge(page);
+    }
+
+    await expect(
+      page.getByRole("heading", { name: /session complete/i })
+    ).toBeVisible({ timeout: 5000 });
+
+    // Score shows /8
+    await expect(page.getByText("/8")).toBeVisible();
+    // Accuracy % rendered
+    await expect(page.getByTestId("accuracy")).toBeVisible();
+  });
+
+  test("'Play Again' restarts the session", async ({ page }) => {
+    await page.goto("/session");
+    await page.getByRole("button", { name: /start/i }).click();
+    await expect(page.getByRole("button", { name: /play/i })).toBeVisible({
+      timeout: 5000,
+    });
+    await page.getByRole("button", { name: /play/i }).click();
+
+    for (let i = 0; i < 8; i++) {
+      await completeOneChallenge(page);
+    }
+
+    await expect(
+      page.getByRole("heading", { name: /session complete/i })
+    ).toBeVisible({ timeout: 5000 });
+
+    await page.getByRole("button", { name: /play again/i }).click();
+
+    // Should be back in active challenge (fretboard visible)
+    await expect(page.getByRole("grid")).toBeVisible({ timeout: 8000 });
+  });
+
+  test("'Home' link points to /", async ({ page }) => {
+    await page.goto("/session");
+    await page.getByRole("button", { name: /start/i }).click();
+    await expect(page.getByRole("button", { name: /play/i })).toBeVisible({
+      timeout: 5000,
+    });
+    await page.getByRole("button", { name: /play/i }).click();
+
+    for (let i = 0; i < 8; i++) {
+      await completeOneChallenge(page);
+    }
+
+    await expect(
+      page.getByRole("heading", { name: /session complete/i })
+    ).toBeVisible({ timeout: 5000 });
+
+    const homeLink = page.getByRole("link", { name: /home/i });
+    await expect(homeLink).toBeVisible();
+    await expect(homeLink).toHaveAttribute("href", "/");
+  });
+});

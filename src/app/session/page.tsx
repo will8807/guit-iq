@@ -6,6 +6,7 @@ import { initAudio, playNote, isAudioReady } from "@/lib/audio/engine";
 import Fretboard, { type FretHighlight } from "@/components/Fretboard";
 import ChallengePrompt from "@/components/ChallengePrompt";
 import ChallengeFeedback from "@/components/ChallengeFeedback";
+import SessionComplete from "@/components/SessionComplete";
 import { useOrientation, type FretboardLayout } from "@/hooks/useOrientation";
 import type { Difficulty } from "@/lib/challenges/findTheNote";
 
@@ -17,6 +18,8 @@ export default function SessionPage() {
     score,
     difficulty,
     streak,
+    bestStreak,
+    sessionStartTime,
     promotedDifficulty,
     startChallenge,
     noteReady,
@@ -96,6 +99,13 @@ export default function SessionPage() {
 
   function handleNext() {
     nextChallenge();
+    // startChallenge is a no-op when phase becomes "complete"
+    startChallenge();
+  }
+
+  function handlePlayAgain() {
+    reset();
+    // Audio is already initialised — jump straight to the first challenge
     startChallenge();
   }
 
@@ -181,7 +191,20 @@ export default function SessionPage() {
     );
   }
 
-  // Step 3: active challenge (playing / awaiting / feedback)
+  // Step 3: completion screen
+  if (phase === "complete") {
+    return (
+      <SessionComplete
+        score={score}
+        bestStreak={bestStreak}
+        sessionStartTime={sessionStartTime}
+        difficulty={difficulty}
+        onPlayAgain={handlePlayAgain}
+      />
+    );
+  }
+
+  // Step 4: active challenge (playing / awaiting / feedback)
   return (
     <main className="min-h-screen w-full bg-zinc-900 text-white flex flex-col p-4 gap-4 max-w-2xl mx-auto">
       {/* Promotion toast */}

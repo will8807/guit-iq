@@ -14,12 +14,15 @@
  *                                                           │
  *                                              nextChallenge() / reset()
  *                                                           │
- *                                                           ▼
- *                                                         idle
+ *                                              ┌────────────┴────────────┐
+ *                                           (more)                   (done)
+ *                                              │                         │
+ *                                            idle                    complete
  *
  * "playing"  = audio is currently being played to the user
  * "awaiting" = audio done, fretboard is active, waiting for tap
  * "feedback" = result shown (correct / incorrect + revealed positions)
+ * "complete" = session finished (score.total >= sessionLength)
  */
 
 import { create } from "zustand";
@@ -37,7 +40,10 @@ import {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type SessionPhase = "idle" | "playing" | "awaiting" | "feedback";
+export type SessionPhase = "idle" | "playing" | "awaiting" | "feedback" | "complete";
+
+/** Number of challenges in a single session */
+export const SESSION_LENGTH = 8;
 
 export interface SessionState {
   phase: SessionPhase;
@@ -48,10 +54,14 @@ export interface SessionState {
   score: { correct: number; total: number };
   /** Per-note accuracy stats (persisted across sessions) */
   noteStats: Record<string, NoteStats>;
-  /** Current correct-answer streak */
+  /** Current correct-answer streak within the session */
   streak: number;
+  /** Best streak achieved within the current session */
+  bestStreak: number;
   /** Set to the new difficulty when auto-promoted; cleared after the toast is dismissed */
   promotedDifficulty: Difficulty | null;
+  /** Unix ms when the current session's first challenge started; null when idle */
+  sessionStartTime: number | null;
 
   // ── Actions ──────────────────────────────────────────────────────────────
   /** Begin a new challenge (picks a weighted note and moves to "playing") */
@@ -60,13 +70,13 @@ export interface SessionState {
   noteReady: () => void;
   /** Evaluate the user's fretboard tap */
   submitAnswer: (string: number, fret: number) => void;
-  /** Move from "feedback" back to "idle", ready for next challenge */
+  /** Move from "feedback" → "idle" (next challenge) or "complete" (session done) */
   nextChallenge: () => void;
   /** Change difficulty (only allowed from idle) */
   setDifficulty: (difficulty: Difficulty) => void;
   /** Dismiss the promotion toast */
   clearPromotion: () => void;
-  /** Full reset — clears score + streak, back to idle (noteStats preserved) */
+  /** Full reset — clears score + streak + timing, back to idle (noteStats preserved) */
   reset: () => void;
 }
 
@@ -82,13 +92,21 @@ export const useSessionStore = create<SessionState>()(
       score: { correct: 0, total: 0 },
       noteStats: {},
       streak: 0,
+      bestStreak: 0,
       promotedDifficulty: null,
+      sessionStartTime: null,
 
       startChallenge() {
-        const { difficulty, noteStats, phase } = get();
+        const { difficulty, noteStats, phase, sessionStartTime } = get();
         if (phase !== "idle" && phase !== "feedback") return;
         const challenge = generateWeightedChallenge(difficulty, noteStats);
-        set({ phase: "playing", challenge, lastResult: null });
+        set({
+          phase: "playing",
+          challenge,
+          lastResult: null,
+          // Record start time on the very first challenge of the session
+          sessionStartTime: sessionStartTime ?? Date.now(),
+        });
       },
 
       noteReady() {
@@ -97,7 +115,7 @@ export const useSessionStore = create<SessionState>()(
       },
 
       submitAnswer(string, fret) {
-        const { phase, challenge, score, noteStats, streak, difficulty } = get();
+        const { phase, challenge, score, noteStats, streak, bestStreak, difficulty } = get();
         if (phase !== "awaiting" || !challenge) return;
 
         const result = evaluateAnswer(challenge, string, fret);
@@ -113,8 +131,9 @@ export const useSessionStore = create<SessionState>()(
           },
         };
 
-        // Update streak
+        // Update streak + best streak
         const newStreak = result.correct ? streak + 1 : 0;
+        const newBestStreak = Math.max(bestStreak, newStreak);
 
         // Auto-promote if streak threshold reached
         let newDifficulty = difficulty;
@@ -133,6 +152,7 @@ export const useSessionStore = create<SessionState>()(
           },
           noteStats: newNoteStats,
           streak: newStreak,
+          bestStreak: newBestStreak,
           difficulty: newDifficulty,
           promotedDifficulty,
         });
@@ -140,7 +160,13 @@ export const useSessionStore = create<SessionState>()(
 
       nextChallenge() {
         if (get().phase !== "feedback") return;
-        set({ phase: "idle" });
+        const { score } = get();
+        // Transition to complete when we've hit the session length
+        if (score.total >= SESSION_LENGTH) {
+          set({ phase: "complete" });
+        } else {
+          set({ phase: "idle" });
+        }
       },
 
       setDifficulty(difficulty) {
@@ -159,7 +185,9 @@ export const useSessionStore = create<SessionState>()(
           lastResult: null,
           score: { correct: 0, total: 0 },
           streak: 0,
+          bestStreak: 0,
           promotedDifficulty: null,
+          sessionStartTime: null,
           difficulty: "easy",
           // noteStats intentionally preserved across resets
         });
