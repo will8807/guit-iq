@@ -540,25 +540,23 @@ HEAR → LOCATE → PLAY → FEEDBACK → ADAPT
 - [ ] **M1.12** Manual QA on real devices
 
 ### Milestone 2 — Fretboard Input
-- [ ] **M2.1** Create `lib/music/fretboard.ts` — `getNoteAtPosition(string, fret)`, `getAllPositionsForNote(note)`, standard tuning config
-- [ ] **M2.2** Unit tests for `getNoteAtPosition` (all 78 positions)
-- [ ] **M2.3** Unit tests for `getAllPositionsForNote` (spot-check 12 notes)
-- [ ] **M2.4** Build `<Fretboard>` component
-  - [ ] 6 strings × 13 fret positions (0–12)
-  - [ ] `onSelect({string, fret, note})` callback
-  - [ ] Plays tapped note via audio engine
-  - [ ] `highlights` prop for visual states
-  - [ ] Fret markers at 3, 5, 7, 9, 12
-  - [ ] Open string labels
-  - [ ] NO note name labels on frets
-  - [ ] Min 44px touch targets
-  - [ ] `role="button"` + `aria-label` on each cell
-- [ ] **M2.5** Component tests for `<Fretboard>`
-  - [ ] Correct cell count
-  - [ ] `onSelect` fires with correct payload
-  - [ ] Tapping calls `playNote`
-  - [ ] Highlight states apply correct classes
-- [ ] **M2.6** Create `/dev/fretboard` dev page
+- [x] **M2.1** Create `lib/music/fretboard.ts` — `getNoteAtPosition(string, fret)`, `getAllPositionsForNote(note)`, standard tuning config
+- [x] **M2.2** Unit tests for `getNoteAtPosition` (all 78 positions)
+- [x] **M2.3** Unit tests for `getAllPositionsForNote` (spot-check 12 notes)
+- [x] **M2.4** Build `<Fretboard>` component
+  - [x] 6 strings × 13 fret positions (0–12)
+  - [x] `onSelect(string, fret)` callback
+  - [x] Plays tapped note via audio engine
+  - [x] `highlights` prop for visual states
+  - [x] Fret markers at 3, 5, 7, 9, 12
+  - [x] NO note name labels on frets
+  - [x] `role="gridcell"` + `aria-label` on each cell
+- [x] **M2.5** Component tests for `<Fretboard>`
+  - [x] Correct cell count
+  - [x] `onSelect` fires with correct payload
+  - [x] Tapping calls `playNote`
+  - [x] Highlight states apply correct classes
+- [x] **M2.6** Create `/dev/fretboard` dev page
 - [ ] **M2.7** Manual mobile QA — touch targets, scroll, layout on 375px
 
 ### Milestone 3 — Find the Note Challenge
