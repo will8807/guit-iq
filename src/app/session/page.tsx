@@ -156,7 +156,7 @@ export default function SessionPage() {
 
   // Step 3: active challenge (playing / awaiting / feedback)
   return (
-    <main className="min-h-screen bg-zinc-900 text-white flex flex-col p-4 gap-4 max-w-2xl mx-auto">
+    <main className="min-h-screen w-full bg-zinc-900 text-white flex flex-col p-4 gap-4 max-w-2xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between pt-2">
         <h1 className="text-lg font-bold">🎸 GuitIQ</h1>
