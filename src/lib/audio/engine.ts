@@ -40,6 +40,19 @@ let _isReady = false;
 let _sampler: unknown = null; // Tone.Sampler or Tone.PolySynth
 let _usingSynth = false;
 
+// Pre-load the Tone.js module as soon as this module is imported (browser only).
+// This ensures the dynamic import is already resolved by the time the user taps
+// "Init Audio", so Tone.start() is called synchronously within the gesture —
+// required by Android Chrome's strict autoplay policy.
+let _tonePromise: Promise<typeof import("tone")> | null = null;
+if (typeof window !== "undefined") {
+  _tonePromise = import("tone");
+}
+async function getTone(): Promise<typeof import("tone")> {
+  if (!_tonePromise) _tonePromise = import("tone");
+  return _tonePromise;
+}
+
 // ─── Sample URLs ──────────────────────────────────────────────────────────────
 
 /**
@@ -71,7 +84,7 @@ const GUITAR_SAMPLES: Record<string, string> = {
 export async function initAudio(): Promise<void> {
   if (_isReady) return;
 
-  const Tone = await import("tone");
+  const Tone = await getTone();
 
   // Resume AudioContext (required by browsers after user gesture)
   await Tone.start();
@@ -202,8 +215,7 @@ export async function playFeedbackChime(
 ): Promise<void> {
   if (!_isReady) return; // Silent fail — feedback is non-critical
 
-  const Tone = await import("tone");
-
+  const Tone = await getTone();
   const note = type === "correct" ? "C5" : "C3";
   const duration = type === "correct" ? 0.15 : 0.25;
 
