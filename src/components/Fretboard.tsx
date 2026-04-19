@@ -37,7 +37,7 @@ interface FretboardProps {
   disabled?: boolean;
 }
 
-const STRINGS = [1, 2, 3, 4, 5, 6] as const;
+const STRINGS = [6, 5, 4, 3, 2, 1] as const; // left = low E, right = high E
 const FRETS = Array.from({ length: 13 }, (_, i) => i); // 0–12
 
 const HIGHLIGHT_CLASSES: Record<HighlightVariant, string> = {
@@ -83,13 +83,14 @@ export default function Fretboard({
       <div aria-hidden="true" className="flex mb-1">
         <div className="w-6 shrink-0" />
         {STRINGS.map((string) => {
-          const names = ["E", "B", "G", "D", "A", "E"];
+          // string 1=high E, 2=B, 3=G, 4=D, 5=A, 6=low E
+          const nameByString: Record<number, string> = { 1: "e", 2: "B", 3: "G", 4: "D", 5: "A", 6: "E" };
           return (
             <div
               key={string}
               className="flex-1 text-center text-[10px] text-zinc-500"
             >
-              {names[string - 1]}
+              {nameByString[string]}
             </div>
           );
         })}
@@ -98,7 +99,7 @@ export default function Fretboard({
       {/* Fret rows — top = open/nut, bottom = fret 12 */}
       {FRETS.map((fret) => (
         <div key={fret}>
-          {/* Clickable cells for this fret */}
+          {/* Clickable cells for this fret, with inlay dots overlaid */}
           <div role="row" className="flex">
             {/* Fret number label */}
             <div
@@ -108,65 +109,64 @@ export default function Fretboard({
               {fret === 0 ? "" : fret}
             </div>
 
-            {STRINGS.map((string) => {
-              const highlight = getHighlight(highlights, string, fret);
-              const isNut = fret === 0;
-
-              return (
-                <button
-                  key={string}
-                  role="gridcell"
-                  aria-label={`String ${string}, fret ${fret}`}
-                  aria-disabled={disabled}
-                  onClick={() => handleTap(string, fret)}
-                  className={[
-                    "flex-1 h-12 relative flex items-center justify-center",
-                    // Vertical string line through the centre of the cell
-                    "before:absolute before:inset-x-1/2 before:inset-y-0 before:w-px before:bg-zinc-500",
-                    // Bottom border = fret wire; nut is thicker
-                    isNut
-                      ? "border-b-4 border-b-zinc-300"
-                      : "border-b border-b-zinc-600",
-                    highlight
-                      ? `${HIGHLIGHT_CLASSES[highlight.variant]} before:hidden rounded-full`
-                      : "hover:bg-zinc-700 active:bg-zinc-600",
-                    disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
-                  ].join(" ")}
-                >
-                  {highlight && (
-                    <span
-                      aria-hidden="true"
-                      className="w-5 h-5 rounded-full z-10 block"
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Inlay dot strip — only at marked frets */}
-          {(SINGLE_DOT_FRETS.has(fret) || fret === 12) && (
-            <div aria-hidden="true" className="flex h-3">
-              <div className="w-6 shrink-0" />
+            {/* String columns — relative so dots can be absolutely positioned */}
+            <div className="relative flex flex-1">
               {STRINGS.map((string) => {
-                // Single dot: centred between strings 3 and 4 — show on column 3
-                const isSingleDot = SINGLE_DOT_FRETS.has(fret) && string === 3;
-                // Double dots at fret 12: between strings 2/3 (col 2) and 4/5 (col 4)
-                const isDoubleDot = fret === 12 && (string === 2 || string === 4);
+                const highlight = getHighlight(highlights, string, fret);
+                const isNut = fret === 0;
 
                 return (
-                  <div
+                  <button
                     key={string}
-                    className="flex-1 flex items-center justify-center"
+                    role="gridcell"
+                    aria-label={`String ${string}, fret ${fret}`}
+                    aria-disabled={disabled}
+                    onClick={() => handleTap(string, fret)}
+                    className={[
+                      "flex-1 h-12 relative flex items-center justify-center",
+                      // Vertical string line through the centre of the cell
+                      "before:absolute before:inset-x-1/2 before:inset-y-0 before:w-px before:bg-zinc-500",
+                      // Bottom border = fret wire; nut is thicker
+                      isNut
+                        ? "border-b-4 border-b-zinc-300"
+                        : "border-b border-b-zinc-600",
+                      highlight
+                        ? `${HIGHLIGHT_CLASSES[highlight.variant]} before:hidden rounded-full`
+                        : "hover:bg-zinc-700 active:bg-zinc-600",
+                      disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
+                    ].join(" ")}
                   >
-                    {(isSingleDot || isDoubleDot) && (
-                      <span className="w-2 h-2 rounded-full bg-zinc-300" />
+                    {highlight && (
+                      <span
+                        aria-hidden="true"
+                        className="w-5 h-5 rounded-full z-10 block"
+                      />
                     )}
-                  </div>
+                  </button>
                 );
               })}
+
+              {/* Inlay dots — absolutely positioned over the string area, between strings */}
+              {SINGLE_DOT_FRETS.has(fret) && (
+                <span
+                  aria-hidden="true"
+                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-zinc-400 pointer-events-none z-10"
+                />
+              )}
+              {fret === 12 && (
+                <>
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-1/3 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-zinc-400 pointer-events-none z-10"
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-2/3 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-zinc-400 pointer-events-none z-10"
+                  />
+                </>
+              )}
             </div>
-          )}
+          </div>
         </div>
       ))}
     </div>
