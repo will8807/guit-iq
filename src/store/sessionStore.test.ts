@@ -1,6 +1,16 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useSessionStore, SESSION_LENGTH } from "./sessionStore";
 import { STREAK_THRESHOLD } from "@/lib/challenges/findTheNote";
+import type { TaggedNoteChallenge, Challenge } from "@/lib/session/sessionGenerator";
+import { getAllPositions } from "@/lib/music/fretboard";
+import { fretToMidi } from "@/lib/music/notes";
+
+/** Narrow a Challenge to find-the-note (throws in tests if wrong type) */
+function asNote(c: Challenge | null): TaggedNoteChallenge {
+  if (!c || c.type !== "find-the-note")
+    throw new Error(`Expected find-the-note challenge, got ${c?.type}`);
+  return c;
+}
 
 // Reset store between tests
 beforeEach(() => {
@@ -98,7 +108,7 @@ describe("submitAnswer", () => {
     setupAwaiting();
     // Submit a known correct answer — pick first valid position from the challenge
     const { challenge } = useSessionStore.getState();
-    const first = challenge!.validPositions[0]!;
+    const first = asNote(challenge).validPositions[0]!;
     useSessionStore.getState().submitAnswer(first.string, first.fret);
     expect(useSessionStore.getState().score.correct).toBe(1);
     expect(useSessionStore.getState().lastResult!.correct).toBe(true);
@@ -108,7 +118,7 @@ describe("submitAnswer", () => {
     setupAwaiting();
     const { challenge } = useSessionStore.getState();
     // Find a position NOT in validPositions
-    const invalid = findInvalidPosition(challenge!.validPositions);
+    const invalid = findInvalidPosition(asNote(challenge).validPositions);
     useSessionStore.getState().submitAnswer(invalid.string, invalid.fret);
     expect(useSessionStore.getState().score.correct).toBe(0);
     expect(useSessionStore.getState().lastResult!.correct).toBe(false);
@@ -214,7 +224,7 @@ describe("streak tracking", () => {
   it("increments streak on correct answer", () => {
     setupAwaiting();
     const { challenge } = useSessionStore.getState();
-    const pos = challenge!.validPositions[0]!;
+    const pos = asNote(challenge).validPositions[0]!;
     useSessionStore.getState().submitAnswer(pos.string, pos.fret);
     expect(useSessionStore.getState().streak).toBe(1);
   });
@@ -223,7 +233,7 @@ describe("streak tracking", () => {
     // First answer correct → streak = 1
     setupAwaiting();
     const { challenge } = useSessionStore.getState();
-    const pos = challenge!.validPositions[0]!;
+    const pos = asNote(challenge).validPositions[0]!;
     useSessionStore.getState().submitAnswer(pos.string, pos.fret);
     expect(useSessionStore.getState().streak).toBe(1);
 
@@ -231,7 +241,7 @@ describe("streak tracking", () => {
     useSessionStore.getState().nextChallenge();
     setupAwaiting();
     const invalid = findInvalidPosition(
-      useSessionStore.getState().challenge!.validPositions
+      asNote(useSessionStore.getState().challenge).validPositions
     );
     useSessionStore.getState().submitAnswer(invalid.string, invalid.fret);
     expect(useSessionStore.getState().streak).toBe(0);
@@ -240,7 +250,7 @@ describe("streak tracking", () => {
   it("reset() clears streak", () => {
     setupAwaiting();
     const { challenge } = useSessionStore.getState();
-    const pos = challenge!.validPositions[0]!;
+    const pos = asNote(challenge).validPositions[0]!;
     useSessionStore.getState().submitAnswer(pos.string, pos.fret);
     useSessionStore.getState().reset();
     expect(useSessionStore.getState().streak).toBe(0);
@@ -264,8 +274,9 @@ describe("noteStats tracking", () => {
     useSessionStore.setState({ noteStats: {} });
     setupAwaiting();
     const { challenge } = useSessionStore.getState();
-    const note = challenge!.targetNote;
-    const pos = challenge!.validPositions[0]!;
+    const ch = asNote(challenge);
+    const note = ch.targetNote;
+    const pos = ch.validPositions[0]!;
     useSessionStore.getState().submitAnswer(pos.string, pos.fret);
     const stat = useSessionStore.getState().noteStats[note]!;
     expect(stat.attempts).toBe(1);
@@ -276,8 +287,9 @@ describe("noteStats tracking", () => {
     useSessionStore.setState({ noteStats: {} });
     setupAwaiting();
     const { challenge } = useSessionStore.getState();
-    const note = challenge!.targetNote;
-    const invalid = findInvalidPosition(challenge!.validPositions);
+    const ch = asNote(challenge);
+    const note = ch.targetNote;
+    const invalid = findInvalidPosition(ch.validPositions);
     useSessionStore.getState().submitAnswer(invalid.string, invalid.fret);
     const stat = useSessionStore.getState().noteStats[note]!;
     expect(stat.attempts).toBe(1);
@@ -298,8 +310,9 @@ describe("noteStats tracking", () => {
     useSessionStore.setState({ noteStats: {} });
     setupAwaiting();
     const { challenge } = useSessionStore.getState();
-    const note = challenge!.targetNote;
-    const pos = challenge!.validPositions[0]!;
+    const ch = asNote(challenge);
+    const note = ch.targetNote;
+    const pos = ch.validPositions[0]!;
     useSessionStore.getState().submitAnswer(pos.string, pos.fret);
     useSessionStore.getState().reset();
     // noteStats should still have the recorded data
@@ -314,7 +327,7 @@ describe("auto-promotion", () => {
     useSessionStore.getState().startChallenge();
     useSessionStore.getState().noteReady();
     const { challenge } = useSessionStore.getState();
-    const pos = challenge!.validPositions[0]!;
+    const pos = asNote(challenge).validPositions[0]!;
     useSessionStore.getState().submitAnswer(pos.string, pos.fret);
     useSessionStore.getState().nextChallenge();
   }
@@ -342,7 +355,7 @@ describe("auto-promotion", () => {
     useSessionStore.getState().startChallenge();
     useSessionStore.getState().noteReady();
     const { challenge } = useSessionStore.getState();
-    const pos = challenge!.validPositions[0]!;
+    const pos = asNote(challenge).validPositions[0]!;
     useSessionStore.getState().submitAnswer(pos.string, pos.fret);
     expect(useSessionStore.getState().difficulty).toBe("hard");
     expect(useSessionStore.getState().promotedDifficulty).toBeNull();
@@ -357,7 +370,7 @@ function playOneChallenge() {
   useSessionStore.getState().noteReady();
   const { challenge } = useSessionStore.getState();
   // Use first valid position (correct answer) so we can also test bestStreak
-  const pos = challenge!.validPositions[0]!;
+  const pos = asNote(challenge).validPositions[0]!;
   useSessionStore.getState().submitAnswer(pos.string, pos.fret);
   useSessionStore.getState().nextChallenge();
 }
@@ -404,7 +417,7 @@ describe("bestStreak tracking", () => {
     useSessionStore.getState().startChallenge();
     useSessionStore.getState().noteReady();
     const { challenge } = useSessionStore.getState();
-    const pos = challenge!.validPositions[0]!;
+    const pos = asNote(challenge).validPositions[0]!;
     useSessionStore.getState().submitAnswer(pos.string, pos.fret);
     expect(useSessionStore.getState().bestStreak).toBe(1);
   });
@@ -414,7 +427,7 @@ describe("bestStreak tracking", () => {
     useSessionStore.getState().startChallenge();
     useSessionStore.getState().noteReady();
     const { challenge: c1 } = useSessionStore.getState();
-    const pos = c1!.validPositions[0]!;
+    const pos = asNote(c1).validPositions[0]!;
     useSessionStore.getState().submitAnswer(pos.string, pos.fret);
     expect(useSessionStore.getState().bestStreak).toBe(1);
 
@@ -423,7 +436,7 @@ describe("bestStreak tracking", () => {
     useSessionStore.getState().startChallenge();
     useSessionStore.getState().noteReady();
     const invalid = findInvalidPosition(
-      useSessionStore.getState().challenge!.validPositions
+      asNote(useSessionStore.getState().challenge).validPositions
     );
     useSessionStore.getState().submitAnswer(invalid.string, invalid.fret);
     expect(useSessionStore.getState().streak).toBe(0);
@@ -434,7 +447,7 @@ describe("bestStreak tracking", () => {
     useSessionStore.getState().startChallenge();
     useSessionStore.getState().noteReady();
     const { challenge } = useSessionStore.getState();
-    const pos = challenge!.validPositions[0]!;
+    const pos = asNote(challenge).validPositions[0]!;
     useSessionStore.getState().submitAnswer(pos.string, pos.fret);
     useSessionStore.getState().reset();
     expect(useSessionStore.getState().bestStreak).toBe(0);
@@ -463,10 +476,8 @@ describe("sessionStartTime tracking", () => {
     // Complete first challenge and start second
     useSessionStore.getState().noteReady();
     const { challenge } = useSessionStore.getState();
-    useSessionStore.getState().submitAnswer(
-      challenge!.validPositions[0]!.string,
-      challenge!.validPositions[0]!.fret
-    );
+    const vp = asNote(challenge).validPositions[0]!;
+    useSessionStore.getState().submitAnswer(vp.string, vp.fret);
     useSessionStore.getState().nextChallenge();
     useSessionStore.getState().startChallenge();
 
@@ -479,3 +490,168 @@ describe("sessionStartTime tracking", () => {
     expect(useSessionStore.getState().sessionStartTime).toBeNull();
   });
 });
+
+// ─── M4.3: startSession + queue consumption ───────────────────────────────────
+
+describe("startSession", () => {
+  it("transitions immediately to 'playing'", () => {
+    useSessionStore.getState().startSession();
+    expect(useSessionStore.getState().phase).toBe("playing");
+  });
+
+  it("populates a queue of SESSION_LENGTH challenges", () => {
+    useSessionStore.getState().startSession();
+    expect(useSessionStore.getState().queue).toHaveLength(SESSION_LENGTH);
+  });
+
+  it("respects a custom length", () => {
+    useSessionStore.getState().startSession({ length: 4 });
+    expect(useSessionStore.getState().queue).toHaveLength(4);
+  });
+
+  it("sets queueIndex to 0", () => {
+    useSessionStore.getState().startSession();
+    expect(useSessionStore.getState().queueIndex).toBe(0);
+  });
+
+  it("sets sessionStartTime", () => {
+    const before = Date.now();
+    useSessionStore.getState().startSession();
+    const after = Date.now();
+    const t = useSessionStore.getState().sessionStartTime;
+    expect(t).not.toBeNull();
+    expect(t!).toBeGreaterThanOrEqual(before);
+    expect(t!).toBeLessThanOrEqual(after);
+  });
+
+  it("resets score to zero", () => {
+    // dirty the score first
+    useSessionStore.setState({ score: { correct: 5, total: 8 } });
+    useSessionStore.getState().startSession();
+    expect(useSessionStore.getState().score).toEqual({ correct: 0, total: 0 });
+  });
+
+  it("resets streak and bestStreak to zero", () => {
+    useSessionStore.setState({ streak: 3, bestStreak: 4 });
+    useSessionStore.getState().startSession();
+    expect(useSessionStore.getState().streak).toBe(0);
+    expect(useSessionStore.getState().bestStreak).toBe(0);
+  });
+
+  it("first challenge is the first item in the queue", () => {
+    useSessionStore.getState().startSession();
+    const { challenge, queue } = useSessionStore.getState();
+    expect(challenge).toEqual(queue[0]);
+  });
+});
+
+describe("queue-driven nextChallenge", () => {
+  function playOneQueueChallenge() {
+    const { challenge } = useSessionStore.getState();
+    if (!challenge) return;
+    useSessionStore.getState().noteReady();
+    if (challenge.type === "find-the-note") {
+      const pos = challenge.validPositions[0]!;
+      useSessionStore.getState().submitAnswer(pos.string, pos.fret);
+    } else {
+      // For interval challenges just submit any position
+      useSessionStore.getState().submitAnswer(1, 0);
+    }
+    useSessionStore.getState().nextChallenge();
+  }
+
+  it("advances queueIndex on each nextChallenge", () => {
+    useSessionStore.getState().startSession({ length: 4 });
+    playOneQueueChallenge();
+    useSessionStore.getState().startChallenge();
+    expect(useSessionStore.getState().queueIndex).toBe(1);
+  });
+
+  it("loads the correct queue item for each challenge", () => {
+    useSessionStore.getState().startSession({ length: 4 });
+    const queue = useSessionStore.getState().queue;
+
+    for (let i = 0; i < 3; i++) {
+      expect(useSessionStore.getState().challenge).toEqual(queue[i]);
+      playOneQueueChallenge();
+      if (i < 2) useSessionStore.getState().startChallenge();
+    }
+  });
+
+  it("transitions to 'complete' when queue is exhausted", () => {
+    useSessionStore.getState().startSession({ length: 3 });
+    for (let i = 0; i < 3; i++) {
+      playOneQueueChallenge();
+      if (i < 2) useSessionStore.getState().startChallenge();
+    }
+    expect(useSessionStore.getState().phase).toBe("complete");
+  });
+
+  it("reset() clears the queue and resets queueIndex", () => {
+    useSessionStore.getState().startSession({ length: 4 });
+    useSessionStore.getState().reset();
+    expect(useSessionStore.getState().queue).toHaveLength(0);
+    expect(useSessionStore.getState().queueIndex).toBe(0);
+  });
+});
+
+describe("interval challenge in submitAnswer", () => {
+  it("first tap locks in root and stays in 'awaiting' (does not go to feedback)", () => {
+    useSessionStore.getState().startSession({ length: 1, intervalMix: 1 });
+    expect(useSessionStore.getState().challenge?.type).toBe("find-the-interval");
+
+    useSessionStore.getState().noteReady();
+    expect(useSessionStore.getState().phase).toBe("awaiting");
+
+    // First tap — should NOT advance to feedback
+    useSessionStore.getState().submitAnswer(1, 0);
+    expect(useSessionStore.getState().phase).toBe("awaiting");
+    expect(useSessionStore.getState().intervalFirstTap).toEqual({ string: 1, fret: 0 });
+    expect(useSessionStore.getState().lastResult).toBeNull();
+  });
+
+  it("second tap completes the challenge and sets lastResult with intervalResult", () => {
+    useSessionStore.getState().startSession({ length: 1, intervalMix: 1 });
+    useSessionStore.getState().noteReady();
+
+    // First tap (root)
+    useSessionStore.getState().submitAnswer(1, 0);
+    expect(useSessionStore.getState().phase).toBe("awaiting");
+
+    // Second tap (second note)
+    useSessionStore.getState().submitAnswer(2, 3);
+    expect(useSessionStore.getState().phase).toBe("feedback");
+
+    const result = useSessionStore.getState().lastResult;
+    expect(result).not.toBeNull();
+    expect(result!.intervalResult).toBeDefined();
+    expect(result!.intervalResult!.rootTap).toEqual({ string: 1, fret: 0 });
+    expect(result!.intervalResult!.secondTap).toEqual({ string: 2, fret: 3 });
+    expect(typeof result!.intervalResult!.intervalName).toBe("string");
+    expect(useSessionStore.getState().intervalFirstTap).toBeNull();
+  });
+
+  it("scores correctly when both taps are on the correct pitches", () => {
+    useSessionStore.getState().startSession({ length: 1, intervalMix: 1 });
+    const { challenge } = useSessionStore.getState();
+    expect(challenge?.type).toBe("find-the-interval");
+
+    const positions = getAllPositions();
+    const rootPos = positions.find(
+      (p) => fretToMidi(p.string, p.fret) === (challenge as any).rootMidi
+    );
+    const secondPos = positions.find(
+      (p) => fretToMidi(p.string, p.fret) === (challenge as any).secondMidi
+    );
+    expect(rootPos).toBeTruthy();
+    expect(secondPos).toBeTruthy();
+
+    useSessionStore.getState().noteReady();
+    useSessionStore.getState().submitAnswer(rootPos!.string, rootPos!.fret);   // first tap
+    useSessionStore.getState().submitAnswer(secondPos!.string, secondPos!.fret); // second tap
+
+    expect(useSessionStore.getState().lastResult!.correct).toBe(true);
+    expect(useSessionStore.getState().score.correct).toBe(1);
+  });
+});
+

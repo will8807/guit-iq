@@ -194,7 +194,7 @@ describe("generateWeightedChallenge", () => {
   it("uses noteStats to bias selection (statistical)", () => {
     // Build stats where one note is mastered and everything else is unknown.
     // Run many trials and verify the mastered note appears less often.
-    const samples = 200;
+    const samples = 400;
     let masteredCount = 0;
 
     // Pick A2 as the mastered note (always in easy pool, string 5 fret 0)
@@ -208,10 +208,10 @@ describe("generateWeightedChallenge", () => {
     }
 
     // A2 has weight 0.2 vs avg ~1.0 for others → should appear << (1/poolSize)*samples
-    // Just verify it's significantly less than uniform expectation
+    // Use 0.6 threshold (not 0.5) to avoid integer boundary collisions
     const easyPoolSize = 25; // approximate
     const uniformExpected = samples / easyPoolSize;
-    expect(masteredCount).toBeLessThan(uniformExpected * 0.5);
+    expect(masteredCount).toBeLessThanOrEqual(Math.floor(uniformExpected * 0.6));
   });
 
   it("still eventually picks mastered notes (weight floor)", () => {

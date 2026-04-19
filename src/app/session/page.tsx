@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback, useState } from "react";
 import { useSessionStore } from "@/store/sessionStore";
+import { useSettingsStore } from "@/store/settingsStore";
 import { initAudio, playNote, isAudioReady } from "@/lib/audio/engine";
 import Fretboard, { type FretHighlight } from "@/components/Fretboard";
 import ChallengePrompt from "@/components/ChallengePrompt";
@@ -9,6 +10,7 @@ import ChallengeFeedback from "@/components/ChallengeFeedback";
 import SessionComplete from "@/components/SessionComplete";
 import { useOrientation, type FretboardLayout } from "@/hooks/useOrientation";
 import type { Difficulty } from "@/lib/challenges/findTheNote";
+import type { Challenge } from "@/lib/session/sessionGenerator";
 
 export default function SessionPage() {
   const {
@@ -21,6 +23,8 @@ export default function SessionPage() {
     bestStreak,
     sessionStartTime,
     promotedDifficulty,
+    intervalFirstTap,
+    startSession,
     startChallenge,
     noteReady,
     submitAnswer,
@@ -34,6 +38,8 @@ export default function SessionPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
 
+  const { showRoot, setShowRoot } = useSettingsStore();
+
   // Orientation: auto-detect + manual override
   const autoLayout = useOrientation();
   const [layoutOverride, setLayoutOverride] = useState<FretboardLayout | null>(null);
@@ -44,12 +50,26 @@ export default function SessionPage() {
     setLayoutOverride(layout === "portrait" ? "landscape" : "portrait");
   }
 
-  // ── Play the challenge note ────────────────────────────────────────────────
+  // ── Play the challenge note(s) ────────────────────────────────────────────
+
+  /** Resolve the note(s) to play for the active challenge */
+  function getChallengeNotes(c: Challenge): string[] {
+    if (c.type === "find-the-note") return [c.targetNote];
+    // Interval: play root then second note in sequence (handled by playSequence)
+    return [c.rootNote, c.secondNote];
+  }
 
   const playChallenge = useCallback(async () => {
     if (!challenge) return;
     setIsPlaying(true);
-    await playNote(challenge.targetNote, 2);
+    const notes = getChallengeNotes(challenge);
+    if (notes.length === 1) {
+      await playNote(notes[0]!, 2);
+    } else {
+      // Import playSequence for interval challenges
+      const { playSequence } = await import("@/lib/audio/engine");
+      await playSequence(notes, 400);
+    }
     setIsPlaying(false);
     noteReady();
   }, [challenge, noteReady]);
@@ -81,8 +101,7 @@ export default function SessionPage() {
   }
 
   function handleStart() {
-    reset();
-    startChallenge();
+    startSession({ difficulty, intervalMix: 0.5 });
   }
 
   function handleFretboardSelect(string: number, fret: number) {
@@ -93,39 +112,76 @@ export default function SessionPage() {
   async function handleReplay() {
     if (!challenge || isPlaying) return;
     setIsPlaying(true);
-    await playNote(challenge.targetNote, 2);
+    const notes = getChallengeNotes(challenge);
+    if (notes.length === 1) {
+      await playNote(notes[0]!, 2);
+    } else {
+      const { playSequence } = await import("@/lib/audio/engine");
+      await playSequence(notes, 400);
+    }
     setIsPlaying(false);
   }
 
   function handleNext() {
     nextChallenge();
-    // startChallenge is a no-op when phase becomes "complete"
+    // startChallenge loads the next item from the queue (no-op when complete)
     startChallenge();
   }
 
   function handlePlayAgain() {
-    reset();
-    // Audio is already initialised — jump straight to the first challenge
-    startChallenge();
+    // startSession resets transient state and generates a fresh queue
+    startSession({ difficulty, intervalMix: 0.5 });
   }
 
   // ── Highlights ────────────────────────────────────────────────────────────
 
   const highlights: FretHighlight[] = [];
+
+  if (phase === "awaiting" && challenge?.type === "find-the-interval" && intervalFirstTap) {
+    // Show the locked-in root tap as a neutral hint highlight (two-tap flow)
+    highlights.push({ ...intervalFirstTap, variant: "hint" });
+  }
   if (phase === "feedback" && lastResult) {
-    // Show the position the user tapped
-    highlights.push({
-      ...lastResult.tappedPosition,
-      variant: lastResult.correct ? "correct" : "incorrect",
-    });
-    // If wrong, also reveal all correct positions as hints
-    if (!lastResult.correct) {
-      for (const pos of lastResult.validPositions) {
-        if (
-          pos.string !== lastResult.tappedPosition.string ||
-          pos.fret !== lastResult.tappedPosition.fret
-        ) {
-          highlights.push({ ...pos, variant: "hint" });
+    const ir = lastResult.intervalResult;
+    if (ir) {
+      // Interval feedback: per-note highlights
+      highlights.push({
+        ...ir.rootTap,
+        variant: ir.rootCorrect ? "correct" : "incorrect",
+      });
+      highlights.push({
+        ...ir.secondTap,
+        variant: ir.secondCorrect ? "correct" : "incorrect",
+      });
+      // Reveal hints for incorrect taps
+      if (!ir.rootCorrect) {
+        for (const pos of ir.rootValidPositions) {
+          if (pos.string !== ir.rootTap.string || pos.fret !== ir.rootTap.fret) {
+            highlights.push({ ...pos, variant: "hint" });
+          }
+        }
+      }
+      if (!ir.secondCorrect) {
+        for (const pos of ir.secondValidPositions) {
+          if (pos.string !== ir.secondTap.string || pos.fret !== ir.secondTap.fret) {
+            highlights.push({ ...pos, variant: "hint" });
+          }
+        }
+      }
+    } else {
+      // Note feedback: existing single-tap logic
+      highlights.push({
+        ...lastResult.tappedPosition,
+        variant: lastResult.correct ? "correct" : "incorrect",
+      });
+      if (!lastResult.correct) {
+        for (const pos of lastResult.validPositions) {
+          if (
+            pos.string !== lastResult.tappedPosition.string ||
+            pos.fret !== lastResult.tappedPosition.fret
+          ) {
+            highlights.push({ ...pos, variant: "hint" });
+          }
         }
       }
     }
@@ -179,6 +235,33 @@ export default function SessionPage() {
               {d}
             </button>
           ))}
+        </div>
+
+        {/* Show Root toggle */}
+        <div className="flex items-center justify-between w-full max-w-xs bg-zinc-800 rounded-xl px-4 py-3">
+          <div>
+            <p className="text-sm font-semibold text-white">Show Root</p>
+            <p className="text-xs text-zinc-400 mt-0.5">
+              {showRoot ? "Root highlighted — visual anchor mode" : "No hints — pure ear training"}
+            </p>
+          </div>
+          <button
+            role="switch"
+            aria-checked={showRoot}
+            aria-label="Show Root toggle"
+            onClick={() => setShowRoot(!showRoot)}
+            className={[
+              "relative w-12 h-6 rounded-full transition-colors shrink-0",
+              showRoot ? "bg-indigo-600" : "bg-zinc-600",
+            ].join(" ")}
+          >
+            <span
+              className={[
+                "absolute top-1 w-4 h-4 bg-white rounded-full transition-transform",
+                showRoot ? "translate-x-7" : "translate-x-1",
+              ].join(" ")}
+            />
+          </button>
         </div>
 
         <button
@@ -243,7 +326,26 @@ export default function SessionPage() {
 
       {/* Prompt or Feedback */}
       {(phase === "playing" || phase === "awaiting") && (
-        <ChallengePrompt isPlaying={isPlaying} onReplay={handleReplay} />
+        <ChallengePrompt
+          isPlaying={isPlaying}
+          onReplay={handleReplay}
+          challengeType={challenge?.type ?? "find-the-note"}
+          intervalStep={intervalFirstTap ? 2 : 1}
+          intervalName={
+            showRoot && challenge?.type === "find-the-interval"
+              ? (challenge as { intervalName: string }).intervalName
+              : undefined
+          }
+          rootNote={
+            showRoot && !isPlaying
+              ? challenge?.type === "find-the-interval"
+                ? (challenge as { rootNote: string }).rootNote
+                : challenge?.type === "find-the-note"
+                  ? (challenge as { targetNote: string }).targetNote
+                  : undefined
+              : undefined
+          }
+        />
       )}
       {phase === "feedback" && lastResult && (
         <ChallengeFeedback

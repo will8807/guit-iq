@@ -1,7 +1,7 @@
 # GuitIQ MVP Build Plan
 
 > **Living document** — updated after every feature implementation.
-> Last updated: 2026-04-18
+> Last updated: 2026-04-19 (M5.5 Show Root toggle)
 
 ---
 
@@ -33,7 +33,13 @@ HEAR → LOCATE → PLAY → FEEDBACK → ADAPT
 - The system plays a sound through the browser using Tone.js with guitar samples
 - Sound types (unlocked progressively): single note, interval (two notes), chord, short melodic phrase
 - The user can tap a "replay" button to hear the sound again (up to 3 replays per challenge)
-- Audio is the ONLY prompt — no visual hint, no note name, no fretboard highlight
+- Audio is the PRIMARY prompt — always plays first
+
+### Step 1b: (Optional) SHOW ROOT — Visual Anchor
+- When **Show Root** is enabled, the root note/position is highlighted on the fretboard after audio plays
+- For intervals, the interval name is also shown in the prompt (e.g., "Find the Perfect 5th")
+- This mode is designed for users without a guitar in hand who need a visual reference point
+- When Show Root is OFF, there are NO visual hints — pure ear-to-fretboard training
 
 ### Step 2: LOCATE — User Thinks
 - The user internally translates what they heard into a fretboard position
@@ -42,9 +48,10 @@ HEAR → LOCATE → PLAY → FEEDBACK → ADAPT
 ### Step 3: PLAY — Fretboard Input
 - The user taps the position(s) on an interactive fretboard where they believe the sound lives
 - For single notes: tap one fret
-- For intervals: tap two frets in sequence
+- For intervals: tap two frets in sequence (root first, then second note)
 - For chords: tap multiple frets (future milestone)
 - The fretboard plays back the tapped note(s) so the user hears their own answer
+- When Show Root is ON for intervals, the root tap may be pre-filled (user only taps the second note)
 
 ### Step 4: FEEDBACK — Evaluation
 - Immediate visual + audio feedback:
@@ -175,7 +182,9 @@ HEAR → LOCATE → PLAY → FEEDBACK → ADAPT
 
 **Acceptance criteria:**
 - System selects a random note within the current difficulty range
-- Note is played via the audio engine (no visual hint)
+- Note is played via the audio engine (no visual hint in default mode)
+- **Show Root ON:** the target note's string is highlighted as a visual anchor
+- **Show Root OFF:** no visual hints — pure ear training
 - User taps a fret position on the fretboard
 - Tapped position plays back its note (user hears their answer)
 - Evaluation: correct if the tapped position produces the same pitch (ANY valid fret position accepted)
@@ -214,9 +223,16 @@ HEAR → LOCATE → PLAY → FEEDBACK → ADAPT
 
 ### F-04 · "Find the Interval" Challenge Mode
 
-**Goal:** The system plays two notes in sequence. The user must tap both positions on the fretboard.
+**Goal:** The system plays two notes in sequence. The user must find both notes on the fretboard.
 
 **User story:** As a user, I hear two notes played one after another. I tap where I think each one is on the fretboard, in order. The system tells me if I found both correctly.
+
+**Gameplay context — Show Root toggle (applies to all challenge types):**
+Each challenge type supports a **Show Root** toggle that controls whether visual hints are provided:
+- **Show Root ON ("no guitar" mode):** The root note is highlighted on the fretboard before the user answers. Useful when the user doesn't have a guitar in hand and needs a visual anchor.
+- **Show Root OFF ("with guitar" mode):** No visual hints — pure ear-to-fretboard training. The user relies entirely on their ear and their physical guitar.
+
+This toggle is a per-session setting, not per-challenge. It affects Find the Note (highlight target octave region), Find the Interval (highlight root position), and future chord challenges.
 
 **Acceptance criteria:**
 - System selects a random interval within difficulty range (e.g., minor 3rd, perfect 5th)
@@ -224,12 +240,13 @@ HEAR → LOCATE → PLAY → FEEDBACK → ADAPT
 - User taps two fret positions in order (first note, then second note)
 - Each tap plays back its note
 - Evaluation: correct if both tapped positions produce the correct pitches (ANY valid positions)
+- **Show Root ON:** root note position is highlighted on the fretboard + interval name shown in prompt (e.g., "Find the Perfect 5th")
+- **Show Root OFF:** no visual hints, no interval name — pure ear training
 - Feedback:
   - Both correct: both glow green, success sound
   - Partially correct: correct note green, incorrect note red + correct position revealed
   - Both wrong: both red, both correct positions revealed
-- Interval name is NOT shown before or during the challenge (this is not a naming quiz)
-- After feedback, the interval name is shown as educational reinforcement (e.g., "That was a Perfect 5th")
+- After feedback, the interval name is always shown as educational reinforcement (e.g., "That was a Perfect 5th")
 - "Replay" button replays the interval
 
 **Implementation notes:**
@@ -238,12 +255,14 @@ HEAR → LOCATE → PLAY → FEEDBACK → ADAPT
   - `evaluateFindTheInterval(challenge, answers: [{string, fret}, {string, fret}]): EvaluationResult`
 - `lib/music/intervals.ts` — interval definitions (name, semitones, common guitar shapes)
 - Difficulty config controls: which intervals to include, note range, string restrictions
+- `showRoot` flag stored in session config / settings store, threaded through to UI
 
 **Testing requirements:**
 - Unit test: `generateFindTheIntervalChallenge` returns valid interval within config
 - Unit test: `evaluateFindTheInterval` — both correct, first only, second only, neither
 - Unit test: interval semitone calculations
 - Component test: two-tap sequence captured correctly, feedback renders for all states
+- Component test: Show Root ON renders root highlight + interval name; OFF renders neither
 - E2E test: complete 3 interval challenges
 
 ---
@@ -489,15 +508,16 @@ HEAR → LOCATE → PLAY → FEEDBACK → ADAPT
 
 ---
 
-### Milestone 5 — Interval Challenge + Difficulty + Persistence
-> **Outcome:** Two challenge modes, adaptive difficulty, progress persists across sessions.
+### Milestone 5 — Interval Challenge + Show Root + Difficulty + Persistence
+> **Outcome:** Two challenge modes (note + interval), Show Root toggle for both, adaptive difficulty, progress persists across sessions.
 
 - `lib/challenges/findTheInterval.ts`
-- Interval challenge UI (two-tap input)
+- Interval challenge UI (two-tap fretboard input)
+- Show Root toggle (highlights root on fretboard; shows interval name for intervals)
 - `lib/difficulty/difficultyEngine.ts`
 - `store/progressStore.ts` (persisted)
 - `/progress` screen
-- `/settings` screen
+- `/settings` screen (includes Show Root toggle)
 - E2E test: mixed-mode session with difficulty adjustment
 
 ---
@@ -571,44 +591,57 @@ HEAR → LOCATE → PLAY → FEEDBACK → ADAPT
   - [x] `<ChallengePrompt>` — "Listen and find this note" + replay button
   - [x] `<ChallengeFeedback>` — correct/incorrect + revealed position
 - [x] **M3.7** Build `/session` page — plays audio → accepts fretboard tap → shows feedback
-- [ ] **M3.8** Build landing page with "Start Session" CTA → navigates to `/session`
-- [ ] **M3.9** Component tests for challenge UI
-- [ ] **M3.10** E2E test: complete 3 "Find the Note" challenges
+- [x] **M3.8** Build landing page with "Start Session" CTA → navigates to `/session`
+- [x] **M3.9** Component tests for challenge UI
+- [x] **M3.10** E2E test: complete 3 "Find the Note" challenges
 - [ ] **M3.11** Axe accessibility check on `/` and `/session`
 
 ### Milestone 4 — Full Session + Feedback + Scoring
-- [ ] **M4.1** Create `lib/session/sessionGenerator.ts` — `generateSession(config): Challenge[]`
-- [ ] **M4.2** Unit tests for `generateSession`
-- [ ] **M4.3** Extend `sessionStore` for multi-challenge flow (queue, index, progress)
-- [ ] **M4.4** Unit tests for extended session store
-- [ ] **M4.5** Build progress bar component (shows "4 / 8")
-- [ ] **M4.6** Build session completion screen (correct/total, accuracy, time)
-- [ ] **M4.7** Implement `playFeedbackChime` integration (correct/incorrect chimes)
-- [ ] **M4.8** Create `lib/scoring.ts` + unit tests
-- [ ] **M4.9** Component tests: progress bar, completion screen
-- [ ] **M4.10** E2E test: complete full 8-challenge session, verify completion screen
+- [x] **M4.1** Create `lib/session/sessionGenerator.ts` — `generateSession(config): Challenge[]`
+- [x] **M4.2** Unit tests for `generateSession`
+- [x] **M4.3** Extend `sessionStore` for multi-challenge flow (queue, index, progress)
+- [x] **M4.4** Unit tests for extended session store
+- [x] **M4.6** Build session completion screen (correct/total, accuracy, time)
+- [x] **M4.7** Implement `playFeedbackChime` integration (correct/incorrect chimes)
+- [x] **M4.8** Create `lib/scoring.ts` + unit tests
+- [x] **M4.9** Component tests: progress bar, completion screen
+- [x] **M4.10** E2E test: complete full 8-challenge session, verify completion screen
 
 ### Milestone 5 — Intervals + Difficulty + Persistence
-- [ ] **M5.1** Create `lib/music/intervals.ts` — interval definitions (name, semitones)
-- [ ] **M5.2** Create `lib/challenges/findTheInterval.ts`
-  - [ ] `generateFindTheIntervalChallenge(difficulty)`
-  - [ ] `evaluateFindTheInterval(challenge, answers)`
-- [ ] **M5.3** Unit tests for interval challenge generation + evaluation
-- [ ] **M5.4** Build interval challenge UI (two-tap sequence input)
-- [ ] **M5.5** Component tests for interval challenge
-- [ ] **M5.6** Create `lib/difficulty/difficultyEngine.ts` — `calculateDifficulty(history)`
-- [ ] **M5.7** Unit tests for difficulty engine (all threshold transitions)
-- [ ] **M5.8** Create `store/progressStore.ts` (Zustand + persist)
+- [x] **M5.1** Create `lib/music/intervals.ts` — interval definitions (name, semitones)
+- [x] **M5.2** Create `lib/challenges/findTheInterval.ts`
+  - [x] `generateFindTheIntervalChallenge(difficulty)`
+  - [x] `evaluateFindTheInterval(challenge, answers)`
+- [x] **M5.3** Unit tests for interval challenge generation + evaluation
+- [x] **M5.4** Build interval challenge UI (two-tap fretboard input)
+  - [x] First tap = root note, second tap = second note
+  - [x] Prompt shows "Tap the root note" / "Now tap the second note" per step
+  - [x] Each tap plays back its note, first tap locks in before second
+  - [x] Feedback: per-note correct/incorrect + reveal; interval name shown as educational context
+  - [x] `intervalFirstTap` state in store; locked-in root shown as hint highlight during step 2
+- [x] **M5.5** Implement Show Root toggle
+  - [x] Add `showRoot: boolean` to `settingsStore.ts` (Zustand + persist)
+  - [x] Show Root ON (intervals): highlight all root positions on fretboard + show interval name in prompt; user only taps second note (root pre-filled)
+  - [x] Show Root ON (notes): highlight all valid positions for the target note as hints
+  - [x] Show Root OFF: no visual hints for any challenge type
+  - [x] Toggle in difficulty picker UI (idle screen)
+- [ ] **M5.6** Component tests for interval challenge + Show Root
+  - [ ] Two-tap sequence captured correctly
+  - [ ] Feedback renders for all states (both correct, partial, both wrong)
+  - [ ] Show Root ON renders highlight + label; OFF renders neither
+- [ ] **M5.7** Create `lib/difficulty/difficultyEngine.ts` — `calculateDifficulty(history)`
+- [ ] **M5.8** Unit tests for difficulty engine (all threshold transitions)
+- [ ] **M5.9** Create `store/progressStore.ts` (Zustand + persist)
   - [ ] Streak logic (calendar-day based)
   - [ ] Accuracy per challenge type
   - [ ] Total sessions, answer history (last 100)
-- [ ] **M5.9** Unit tests for streak logic
-- [ ] **M5.10** Build `/progress` screen — stats grid
-- [ ] **M5.11** Build `/settings` screen — session length, challenge types
-- [ ] **M5.12** Create `store/settingsStore.ts` (Zustand + persist) + unit tests
-- [ ] **M5.13** Integration test: difficulty adjusts after 20 correct answers
-- [ ] **M5.14** E2E test: complete mixed-mode session → progress screen updated
-- [ ] **M5.15** Lighthouse mobile audit ≥ 85
+- [ ] **M5.10** Unit tests for streak logic
+- [ ] **M5.11** Build `/progress` screen — stats grid
+- [ ] **M5.12** Build `/settings` screen — session length, challenge types, Show Root toggle
+- [ ] **M5.13** Create `store/settingsStore.ts` (Zustand + persist) + unit tests
+- [ ] **M5.14** Integration test: difficulty adjusts after 20 correct answers
+- [ ] **M5.15** E2E test: complete mixed-mode session → progress screen updated
+- [ ] **M5.16** Lighthouse mobile audit ≥ 85
 
 ---
 
@@ -652,6 +685,7 @@ Keep the E2E suite small and focused on the core loop:
 | Landing → Start → Complete 3 note challenges | Core hear→play loop works |
 | Complete full 8-challenge session → completion screen | Session flow works end-to-end |
 | Complete interval challenges (two-tap) | Interval mode works |
+| Complete interval challenge with Show Root ON | Show Root highlights + single-tap works |
 | Progress screen shows updated stats after session | Persistence works |
 | Settings change persists on reload | Settings persistence works |
 
@@ -739,13 +773,14 @@ A feature is **done** when:
 
 ### ❌ Visual-First Training App
 - Every challenge MUST start with audio
-- No challenge that shows a visual prompt and asks the user to identify it
+- No challenge that shows a visual prompt INSTEAD of audio
+- Show Root mode provides a visual ANCHOR after audio plays — audio always comes first
 - If the user's phone is on mute, the app should feel broken — that's correct
 
 ### ❌ Note Naming Quiz App
 - No text-based answers ("type the note name")
-- No multiple-choice "what interval was that?" (user must PLAY, not name)
-- Naming is shown as post-answer educational context only
+- No multiple-choice identification quizzes (user must PLAY on the fretboard, not pick from options)
+- Naming/interval labels are shown as post-answer educational context, or as hints when Show Root is ON
 
 ### ❌ General Music Education App
 - No video lessons
@@ -812,6 +847,7 @@ Items that are known, scoped, but deliberately deferred. Pick up when relevant.
 | ID | Item | Context |
 |---|---|---|
 | **BL-01** | Fix Mobile Safari E2E tests | All 13 Mobile Safari tests in `e2e/session.spec.ts` and `e2e/accessibility.spec.ts` are failing. Desktop Chrome and Mobile Chrome pass. Root cause is likely WebKit not being installed in the local Playwright setup (`playwright install webkit` not run) combined with possible `--disable-web-security` launch arg not being supported on WebKit. Fix: install WebKit (`pnpm exec playwright install webkit`), remove or conditionally apply the `--disable-web-security` arg for WebKit projects, verify the audio stub works under WebKit's stricter security model. |
+| **BL-02** | Chord inversion challenges | Add a challenge mode where the user hears a chord inversion (root, 1st, 2nd, etc.) and must find the notes on the fretboard. Requires: chord voicing library, multi-tap input (3+ notes), inversion-aware evaluation. Show Root toggle would highlight the root note of the chord. Depends on a future "Find the Chord" milestone being built first. |
 
 ---
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import SessionComplete from "./SessionComplete";
@@ -12,15 +12,24 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+const FROZEN_NOW = 1_000_000_000_000; // fixed reference point
+
 const defaultProps = {
   score: { correct: 6, total: 8 },
   bestStreak: 3,
-  sessionStartTime: Date.now() - 90_000, // 1m 30s ago
+  sessionStartTime: FROZEN_NOW - 90_000, // exactly 1m 30s ago
   difficulty: "easy" as const,
   onPlayAgain: vi.fn(),
 };
 
 describe("SessionComplete", () => {
+  beforeAll(() => {
+    vi.spyOn(Date, "now").mockReturnValue(FROZEN_NOW);
+  });
+
+  afterAll(() => {
+    vi.restoreAllMocks();
+  });
   it("renders the 'Session Complete' heading", () => {
     render(<SessionComplete {...defaultProps} />);
     expect(screen.getByRole("heading", { name: /session complete/i })).toBeTruthy();

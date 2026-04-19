@@ -36,11 +36,30 @@ export interface FindTheNoteChallenge {
 
 export interface EvaluationResult {
   correct: boolean;
-  /** The position the user tapped */
+  /** The position the user tapped (for intervals: the second-note tap) */
   tappedPosition: FretPosition;
-  /** All positions that would have been correct */
+  /** All positions that would have been correct (for intervals: second note) */
   validPositions: FretPosition[];
   targetNote: string;
+  /**
+   * Present only for interval challenges — provides per-note breakdown
+   * and the interval name for educational post-answer display.
+   */
+  intervalResult?: IntervalTapResult;
+}
+
+/**
+ * Per-note breakdown for a two-tap interval challenge evaluation.
+ */
+export interface IntervalTapResult {
+  rootTap: FretPosition;
+  rootCorrect: boolean;
+  rootValidPositions: FretPosition[];
+  secondTap: FretPosition;
+  secondCorrect: boolean;
+  secondValidPositions: FretPosition[];
+  /** Human-readable interval name, e.g. "Perfect 5th" */
+  intervalName: string;
 }
 
 /**
