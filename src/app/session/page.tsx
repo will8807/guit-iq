@@ -31,7 +31,6 @@ export default function SessionPage() {
     nextChallenge,
     setDifficulty,
     clearPromotion,
-    reset,
   } = useSessionStore();
 
   const [audioReady, setAudioReady] = useState(false);
@@ -77,6 +76,7 @@ export default function SessionPage() {
   // Auto-play when a new challenge starts
   useEffect(() => {
     if (phase === "playing") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       playChallenge();
     }
   }, [phase, playChallenge]);
@@ -84,6 +84,7 @@ export default function SessionPage() {
   // Show promotion toast for 3 seconds then clear
   useEffect(() => {
     if (promotedDifficulty) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setToastVisible(true);
       const timer = setTimeout(() => {
         setToastVisible(false);

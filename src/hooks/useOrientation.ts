@@ -23,6 +23,7 @@ export function useOrientation(): FretboardLayout {
       return window.innerWidth > window.innerHeight ? "landscape" : "portrait";
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLayout(getLayout());
 
     function handleChange() {

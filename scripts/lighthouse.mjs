@@ -3,7 +3,7 @@
  * Usage: node scripts/lighthouse.mjs
  */
 import { execFileSync } from "child_process";
-import { readFileSync, unlinkSync, existsSync } from "fs";
+import { readFileSync, existsSync } from "fs";
 import { fileURLToPath } from "url";
 import path from "path";
 

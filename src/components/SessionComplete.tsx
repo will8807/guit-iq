@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import type { Difficulty } from "@/lib/challenges/findTheNote";
 
@@ -30,8 +31,9 @@ export default function SessionComplete({
   const accuracy =
     score.total > 0 ? Math.round((score.correct / score.total) * 100) : 0;
 
-  const elapsed =
-    sessionStartTime != null ? Date.now() - sessionStartTime : null;
+  // Capture the current time once on mount so it doesn't change on re-renders
+  const [now] = useState(() => Date.now());
+  const elapsed = sessionStartTime != null ? now - sessionStartTime : null;
 
   // Emoji grade based on accuracy
   const grade =
