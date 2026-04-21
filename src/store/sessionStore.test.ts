@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { useSessionStore, SESSION_LENGTH } from "./sessionStore";
 import { STREAK_THRESHOLD } from "@/lib/challenges/findTheNote";
 import type { TaggedNoteChallenge, Challenge } from "@/lib/session/sessionGenerator";
+import type { IntervalChallenge } from "@/lib/challenges/findTheInterval";
 import { getAllPositions } from "@/lib/music/fretboard";
 import { fretToMidi } from "@/lib/music/notes";
 
@@ -638,10 +639,10 @@ describe("interval challenge in submitAnswer", () => {
 
     const positions = getAllPositions();
     const rootPos = positions.find(
-      (p) => fretToMidi(p.string, p.fret) === (challenge as any).rootMidi
+      (p) => fretToMidi(p.string, p.fret) === (challenge as unknown as IntervalChallenge).rootMidi
     );
     const secondPos = positions.find(
-      (p) => fretToMidi(p.string, p.fret) === (challenge as any).secondMidi
+      (p) => fretToMidi(p.string, p.fret) === (challenge as unknown as IntervalChallenge).secondMidi
     );
     expect(rootPos).toBeTruthy();
     expect(secondPos).toBeTruthy();

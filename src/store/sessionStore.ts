@@ -37,9 +37,7 @@ import {
   type Difficulty,
   type NoteStats,
 } from "@/lib/challenges/findTheNote";
-import { evaluateIntervalAnswer, evaluateTwoTapInterval } from "@/lib/challenges/findTheInterval";
-import { getAllPositionsForNote } from "@/lib/music/fretboard";
-import { midiToNote } from "@/lib/music/notes";
+import { evaluateTwoTapInterval } from "@/lib/challenges/findTheInterval";
 import {
   generateSession,
   type Challenge,
