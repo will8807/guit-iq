@@ -257,8 +257,8 @@ export default function SessionPage() {
           >
             <span
               className={[
-                "absolute top-1 w-4 h-4 bg-white rounded-full transition-transform",
-                showRoot ? "translate-x-7" : "translate-x-1",
+                "absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform",
+                showRoot ? "translate-x-6" : "translate-x-0",
               ].join(" ")}
             />
           </button>
