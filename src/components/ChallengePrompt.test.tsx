@@ -55,4 +55,62 @@ describe("ChallengePrompt", () => {
     render(<ChallengePrompt isPlaying={false} onReplay={vi.fn()} challengeType="find-the-note" />);
     expect(screen.queryByText(/\/2/)).toBeNull();
   });
+
+  // ── Show Root ─────────────────────────────────────────────────────────────
+
+  it("shows note name badge when rootNote is provided and not playing", () => {
+    render(
+      <ChallengePrompt
+        isPlaying={false}
+        onReplay={vi.fn()}
+        challengeType="find-the-note"
+        rootNote="A3"
+      />
+    );
+    expect(screen.getByText("A3")).toBeDefined();
+    expect(screen.getByText("Note")).toBeDefined();
+  });
+
+  it("does not show note badge when rootNote is not provided", () => {
+    render(<ChallengePrompt isPlaying={false} onReplay={vi.fn()} challengeType="find-the-note" />);
+    expect(screen.queryByText("Note")).toBeNull();
+  });
+
+  it("shows 'Root' label for interval challenges when rootNote is provided", () => {
+    render(
+      <ChallengePrompt
+        isPlaying={false}
+        onReplay={vi.fn()}
+        challengeType="find-the-interval"
+        intervalStep={1}
+        rootNote="G3"
+      />
+    );
+    expect(screen.getByText("G3")).toBeDefined();
+    expect(screen.getByText("Root")).toBeDefined();
+  });
+
+  it("hides note badge while audio is playing even if rootNote is set", () => {
+    render(
+      <ChallengePrompt
+        isPlaying={true}
+        onReplay={vi.fn()}
+        challengeType="find-the-note"
+        rootNote="A3"
+      />
+    );
+    expect(screen.queryByText("A3")).toBeNull();
+  });
+
+  it("shows interval name in prompt when intervalName is provided", () => {
+    render(
+      <ChallengePrompt
+        isPlaying={false}
+        onReplay={vi.fn()}
+        challengeType="find-the-interval"
+        intervalName="Perfect 5th"
+      />
+    );
+    expect(screen.getByText("Find the Perfect 5th")).toBeDefined();
+  });
 });

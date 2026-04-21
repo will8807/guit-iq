@@ -18,6 +18,31 @@ const incorrectResult: EvaluationResult = {
   targetNote: "E2",
 };
 
+// ── Interval result fixtures ────────────────────────────────────────────────
+
+const rootPos = { string: 2, fret: 5 };
+const secondPos = { string: 3, fret: 2 };
+const rootValidPositions = [rootPos, { string: 4, fret: 7 }];
+const secondValidPositions = [secondPos, { string: 5, fret: 9 }];
+
+function makeIntervalResult(rootCorrect: boolean, secondCorrect: boolean): EvaluationResult {
+  return {
+    correct: rootCorrect && secondCorrect,
+    tappedPosition: rootPos,
+    validPositions: rootValidPositions,
+    targetNote: "A3",
+    intervalResult: {
+      rootTap: rootPos,
+      rootCorrect,
+      rootValidPositions,
+      secondTap: secondPos,
+      secondCorrect,
+      secondValidPositions,
+      intervalName: "Perfect 5th",
+    },
+  };
+}
+
 const score = { correct: 2, total: 5 };
 
 describe("ChallengeFeedback", () => {
@@ -58,5 +83,42 @@ describe("ChallengeFeedback", () => {
     render(<ChallengeFeedback result={incorrectResult} score={score} onNext={vi.fn()} />);
     const banner = screen.getByText("Not quite").closest("div")!;
     expect(banner.className).toContain("red");
+  });
+
+  // ── Interval feedback ─────────────────────────────────────────────────────
+
+  it("shows interval name when intervalResult is present", () => {
+    render(<ChallengeFeedback result={makeIntervalResult(true, true)} score={score} onNext={vi.fn()} />);
+    expect(screen.getByText("Perfect 5th")).toBeDefined();
+  });
+
+  it("does not show interval context for note challenges", () => {
+    render(<ChallengeFeedback result={correctResult} score={score} onNext={vi.fn()} />);
+    expect(screen.queryByText(/That was/)).toBeNull();
+    expect(screen.queryByText(/Root/)).toBeNull();
+  });
+
+  it("shows Root ✓ and Interval ✓ when both taps are correct", () => {
+    render(<ChallengeFeedback result={makeIntervalResult(true, true)} score={score} onNext={vi.fn()} />);
+    expect(screen.getByText("Root ✓")).toBeDefined();
+    expect(screen.getByText("Interval ✓")).toBeDefined();
+  });
+
+  it("shows Root ✗ when root tap is wrong", () => {
+    render(<ChallengeFeedback result={makeIntervalResult(false, true)} score={score} onNext={vi.fn()} />);
+    expect(screen.getByText("Root ✗")).toBeDefined();
+    expect(screen.getByText("Interval ✓")).toBeDefined();
+  });
+
+  it("shows Interval ✗ when second tap is wrong", () => {
+    render(<ChallengeFeedback result={makeIntervalResult(true, false)} score={score} onNext={vi.fn()} />);
+    expect(screen.getByText("Root ✓")).toBeDefined();
+    expect(screen.getByText("Interval ✗")).toBeDefined();
+  });
+
+  it("shows Root ✗ and Interval ✗ when both taps are wrong", () => {
+    render(<ChallengeFeedback result={makeIntervalResult(false, false)} score={score} onNext={vi.fn()} />);
+    expect(screen.getByText("Root ✗")).toBeDefined();
+    expect(screen.getByText("Interval ✗")).toBeDefined();
   });
 });

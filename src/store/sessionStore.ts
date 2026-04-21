@@ -45,6 +45,8 @@ import {
   type Challenge,
   type SessionConfig,
 } from "@/lib/session/sessionGenerator";
+import type { AnswerHistory } from "@/lib/difficulty/difficultyEngine";
+import { useProgressStore } from "@/store/progressStore";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -79,6 +81,8 @@ export interface SessionState {
    * waiting for the second tap. Null for note challenges and before first tap.
    */
   intervalFirstTap: { string: number; fret: number } | null;
+  /** Per-answer history for the current session — passed to progressStore on completion */
+  answers: AnswerHistory[];
 
   // ── Actions ──────────────────────────────────────────────────────────────
   /**
@@ -120,6 +124,7 @@ export const useSessionStore = create<SessionState>()(
       promotedDifficulty: null,
       sessionStartTime: null,
       intervalFirstTap: null,
+      answers: [],
 
       startSession(config?: SessionConfig) {
         const { difficulty, noteStats } = get();
@@ -142,6 +147,7 @@ export const useSessionStore = create<SessionState>()(
           promotedDifficulty: null,
           sessionStartTime: Date.now(),
           intervalFirstTap: null,
+          answers: [],
         });
       },
 
@@ -172,7 +178,7 @@ export const useSessionStore = create<SessionState>()(
       },
 
       submitAnswer(string, fret) {
-        const { phase, challenge, score, noteStats, streak, bestStreak, difficulty, intervalFirstTap } = get();
+        const { phase, challenge, score, noteStats, streak, bestStreak, difficulty, intervalFirstTap, answers } = get();
         if (phase !== "awaiting" || !challenge) return;
 
         let result: EvaluationResult;
@@ -213,6 +219,10 @@ export const useSessionStore = create<SessionState>()(
             bestStreak: newBestStreak,
             difficulty: newDifficulty,
             promotedDifficulty,
+            answers: [
+              ...answers,
+              { correct: result.correct, challengeType: challenge.type, timestamp: Date.now() },
+            ],
           });
         } else {
           // ── Find the Interval evaluation (two-tap) ───────────────────────
@@ -238,13 +248,17 @@ export const useSessionStore = create<SessionState>()(
             },
             streak: newStreak,
             bestStreak: newBestStreak,
+            answers: [
+              ...answers,
+              { correct: result.correct, challengeType: challenge.type, timestamp: Date.now() },
+            ],
           });
         }
       },
 
       nextChallenge() {
         if (get().phase !== "feedback") return;
-        const { queue, queueIndex, score } = get();
+        const { queue, queueIndex, score, answers } = get();
 
         const nextIndex = queueIndex + 1;
         const isQueueDriven = queue.length > 0;
@@ -253,6 +267,10 @@ export const useSessionStore = create<SessionState>()(
           : score.total >= SESSION_LENGTH;
 
         if (isDone) {
+          // Record progress before transitioning — synchronous write to localStorage
+          if (answers.length > 0) {
+            useProgressStore.getState().recordSession(answers);
+          }
           set({ phase: "complete" });
         } else {
           set({ phase: "idle", queueIndex: nextIndex });
@@ -281,6 +299,7 @@ export const useSessionStore = create<SessionState>()(
           promotedDifficulty: null,
           sessionStartTime: null,
           intervalFirstTap: null,
+          answers: [],
           difficulty: "easy",
           // noteStats intentionally preserved across resets
         });

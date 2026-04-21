@@ -18,6 +18,9 @@ import { persist } from "zustand/middleware";
 export interface SettingsState {
   showRoot: boolean;
   setShowRoot: (v: boolean) => void;
+  /** Number of challenges per session (default: 8) */
+  sessionLength: number;
+  setSessionLength: (n: number) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -25,6 +28,8 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       showRoot: false,
       setShowRoot: (v) => set({ showRoot: v }),
+      sessionLength: 8,
+      setSessionLength: (n) => set({ sessionLength: n }),
     }),
     { name: "guitiq-settings" }
   )
