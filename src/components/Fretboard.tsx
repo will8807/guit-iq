@@ -68,6 +68,26 @@ const LABEL_CLASSES: Record<HighlightVariant, string> = {
 
 const SINGLE_DOT_FRETS = new Set([3, 5, 7, 9]);
 
+// Realistic string thicknesses: string 6 (low E) is thickest, string 1 (high e) thinnest.
+// Portrait layout: string line is vertical (width varies).
+const STRING_LINE_PORTRAIT: Record<number, string> = {
+  1: "before:absolute before:left-1/2 before:-translate-x-1/2 before:inset-y-0 before:w-px   before:bg-zinc-500",
+  2: "before:absolute before:left-1/2 before:-translate-x-1/2 before:inset-y-0 before:w-px   before:bg-zinc-500",
+  3: "before:absolute before:left-1/2 before:-translate-x-1/2 before:inset-y-0 before:w-[1.5px] before:bg-zinc-400",
+  4: "before:absolute before:left-1/2 before:-translate-x-1/2 before:inset-y-0 before:w-[2px]  before:bg-zinc-400",
+  5: "before:absolute before:left-1/2 before:-translate-x-1/2 before:inset-y-0 before:w-[2.5px] before:bg-zinc-400",
+  6: "before:absolute before:left-1/2 before:-translate-x-1/2 before:inset-y-0 before:w-[3px]  before:bg-zinc-300",
+};
+// Landscape layout: string line is horizontal (height varies).
+const STRING_LINE_LANDSCAPE: Record<number, string> = {
+  1: "before:absolute before:top-1/2 before:-translate-y-1/2 before:inset-x-0 before:h-px   before:bg-zinc-500",
+  2: "before:absolute before:top-1/2 before:-translate-y-1/2 before:inset-x-0 before:h-px   before:bg-zinc-500",
+  3: "before:absolute before:top-1/2 before:-translate-y-1/2 before:inset-x-0 before:h-[1.5px] before:bg-zinc-400",
+  4: "before:absolute before:top-1/2 before:-translate-y-1/2 before:inset-x-0 before:h-[2px]  before:bg-zinc-400",
+  5: "before:absolute before:top-1/2 before:-translate-y-1/2 before:inset-x-0 before:h-[2.5px] before:bg-zinc-400",
+  6: "before:absolute before:top-1/2 before:-translate-y-1/2 before:inset-x-0 before:h-[3px]  before:bg-zinc-300",
+};
+
 function getHighlight(
   highlights: FretHighlight[],
   string: number,
@@ -115,10 +135,10 @@ function FretCell({ string, fret, highlight, disabled, isNut, nutEdge, handleTap
     ? (isNut ? "border-b-4 border-b-zinc-300" : "border-b border-b-zinc-600")
     : (isNut ? "border-l-4 border-l-zinc-300" : "border-l border-l-zinc-600");
 
-  // String line direction
+  // String line: thickness and colour vary per string for realism
   const stringLineClass = nutEdge === "top"
-    ? "before:absolute before:inset-x-1/2 before:inset-y-0 before:w-px before:bg-zinc-500"
-    : "before:absolute before:inset-y-1/2 before:inset-x-0 before:h-px before:bg-zinc-500";
+    ? (STRING_LINE_PORTRAIT[string] ?? STRING_LINE_PORTRAIT[1]!)
+    : (STRING_LINE_LANDSCAPE[string] ?? STRING_LINE_LANDSCAPE[1]!);
 
   return (
     <button
@@ -269,7 +289,7 @@ function LandscapeFretboard({ highlights, disabled, handleTap }: LayoutProps) {
               <div className="w-6 shrink-0" />
               <div className="relative flex flex-1">
                 {FRETS.map((fret) => (
-                  <div key={fret} className="flex-1 flex items-center justify-center">
+                  <div key={fret} className={`flex-1 flex items-center justify-center${fret === 0 ? " border-l-4 border-l-zinc-300" : ""}`}>
                     {SINGLE_DOT_FRETS.has(fret) && (
                       <span className="w-2 h-2 rounded-full bg-zinc-400" />
                     )}
