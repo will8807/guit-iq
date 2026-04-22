@@ -11,6 +11,7 @@ import SessionComplete from "@/components/SessionComplete";
 import { useOrientation, type FretboardLayout } from "@/hooks/useOrientation";
 import type { Difficulty } from "@/lib/challenges/findTheNote";
 import type { Challenge } from "@/lib/session/sessionGenerator";
+import { getAllPositionsForNote } from "@/lib/music/fretboard";
 
 export default function SessionPage() {
   const {
@@ -176,12 +177,13 @@ export default function SessionPage() {
         }
       }
     } else {
-      // Note feedback: mark tapped position, then reveal all other valid positions as hints
+      // Note feedback: mark tapped position, then reveal ALL neck positions for the target note
       highlights.push({
         ...lastResult.tappedPosition,
         variant: lastResult.correct ? "correct" : "incorrect",
       });
-      for (const pos of lastResult.validPositions) {
+      const allPositions = getAllPositionsForNote(lastResult.targetNote);
+      for (const pos of allPositions) {
         if (
           pos.string !== lastResult.tappedPosition.string ||
           pos.fret !== lastResult.tappedPosition.fret
