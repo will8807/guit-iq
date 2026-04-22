@@ -151,13 +151,15 @@ export default function SessionPage() {
         variant: ir.rootCorrect ? "correct" : "incorrect",
         label: "R",
       });
+      // Interval key label for the second note (e.g. "P5", "m3")
+      const intervalKey =
+        challenge?.type === "find-the-interval" ? challenge.intervalKey : undefined;
       highlights.push({
         ...ir.secondTap,
         variant: ir.secondCorrect ? "correct" : "incorrect",
+        label: intervalKey,
       });
       // Interval key label for hint circles (e.g. "P5", "m3")
-      const intervalKey =
-        challenge?.type === "find-the-interval" ? challenge.intervalKey : undefined;
       // Reveal hints for incorrect taps
       if (!ir.rootCorrect) {
         for (const pos of ir.rootValidPositions) {
