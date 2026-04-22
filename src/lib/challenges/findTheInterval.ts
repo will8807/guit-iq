@@ -1,6 +1,6 @@
-import { getMidiRange, midiToNote, GUITAR_MIDI_MAX, GUITAR_MIDI_MIN, fretToMidi } from "@/lib/music/notes"
-import { getAllPositionsForNote, getNoteAtPosition } from "@/lib/music/fretboard"
-import { pickIntervalForDifficulty, getIntervalByKey } from "@/lib/music/intervals"
+import { midiToNote, GUITAR_MIDI_MAX, GUITAR_MIDI_MIN, fretToMidi } from "@/lib/music/notes"
+import { getAllPositionsForNote, type FretPosition } from "@/lib/music/fretboard"
+import { pickIntervalForDifficulty } from "@/lib/music/intervals"
 import type { EvaluationResult, IntervalTapResult } from "@/lib/challenges/findTheNote"
 
 export type IntervalChallenge = {
@@ -14,7 +14,33 @@ export type IntervalChallenge = {
 }
 
 /**
- * Generate a Find The Interval challenge.
+ * Returns all fretboard positions for `secondNote` that are on a different
+ * string than `rootString`. Used to enforce the real-guitar constraint that
+ * both notes of an interval must be fingered on separate strings.
+ */
+export function getValidSecondPositions(rootString: number, secondNote: string): FretPosition[] {
+  return getAllPositionsForNote(secondNote).filter((p) => p.string !== rootString)
+}
+
+/**
+ * Returns true when the given rootMidi has at least one playable pair of
+ * positions (rootPos on string X, secondPos on string Y, X ≠ Y) for the
+ * given interval semitones. Used by challenge generation to ensure every
+ * generated challenge is physically playable on guitar.
+ */
+function hasCrossStringPair(rootMidi: number, semitones: number): boolean {
+  const secondMidi = rootMidi + semitones
+  const rootNote = midiToNote(rootMidi)
+  const secondNote = midiToNote(secondMidi)
+  const rootPositions = getAllPositionsForNote(rootNote)
+  const secondPositions = getAllPositionsForNote(secondNote)
+  return rootPositions.some((rp) =>
+    secondPositions.some((sp) => sp.string !== rp.string)
+  )
+}
+
+
+/**
  * Picks an interval from the interval pool for the difficulty and a playable root note
  * such that the resulting second note is playable on the guitar fretboard.
  */
@@ -26,12 +52,14 @@ export function generateIntervalChallenge(difficulty = "medium", rand = Math.ran
   const min = GUITAR_MIDI_MIN
   const max = GUITAR_MIDI_MAX
 
-  // All MIDI on the guitar (0–12 frets)
+  // All MIDI on the guitar (0–12 frets) that also have a cross-string second note
   const playable: number[] = []
   for (let m = min; m <= max; m++) {
-    // ensure second note is within guitar range
+    // ensure second note is within guitar range AND playable on a different string
     const second = m + semitones
-    if (second >= min && second <= max) playable.push(m)
+    if (second >= min && second <= max && hasCrossStringPair(m, semitones)) {
+      playable.push(m)
+    }
   }
 
   if (playable.length === 0) {
@@ -88,10 +116,14 @@ export function evaluateTwoTapInterval(
   const secondMidi = fretToMidi(secondTap.string, secondTap.fret)
 
   const rootCorrect = rootMidi === challenge.rootMidi
-  const secondCorrect = secondMidi === challenge.secondMidi
+  // The second note must match pitch AND be on a different string (real guitar constraint)
+  const secondCorrect = secondMidi === challenge.secondMidi && secondTap.string !== rootTap.string
 
   const rootNote = midiToNote(challenge.rootMidi)
   const secondNote = midiToNote(challenge.secondMidi)
+
+  // Valid second positions: only cross-string from the root tap
+  const validSecondPositions = getValidSecondPositions(rootTap.string, secondNote)
 
   const intervalResult: IntervalTapResult = {
     rootTap,
@@ -99,7 +131,7 @@ export function evaluateTwoTapInterval(
     rootValidPositions: getAllPositionsForNote(rootNote),
     secondTap,
     secondCorrect,
-    secondValidPositions: getAllPositionsForNote(secondNote),
+    secondValidPositions: validSecondPositions,
     intervalName: challenge.intervalName,
   }
 
@@ -107,7 +139,7 @@ export function evaluateTwoTapInterval(
     correct: rootCorrect && secondCorrect,
     // tappedPosition / validPositions refer to the second note (for legacy compat)
     tappedPosition: secondTap,
-    validPositions: getAllPositionsForNote(secondNote),
+    validPositions: validSecondPositions,
     targetNote: secondNote,
     intervalResult,
   }

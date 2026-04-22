@@ -3,6 +3,7 @@ import { useSessionStore, SESSION_LENGTH } from "./sessionStore";
 import { STREAK_THRESHOLD } from "@/lib/challenges/findTheNote";
 import type { TaggedNoteChallenge, Challenge } from "@/lib/session/sessionGenerator";
 import type { IntervalChallenge } from "@/lib/challenges/findTheInterval";
+import { getValidSecondPositions } from "@/lib/challenges/findTheInterval";
 import { getAllPositions } from "@/lib/music/fretboard";
 import { fretToMidi } from "@/lib/music/notes";
 
@@ -599,35 +600,60 @@ describe("queue-driven nextChallenge", () => {
 describe("interval challenge in submitAnswer", () => {
   it("first tap locks in root and stays in 'awaiting' (does not go to feedback)", () => {
     useSessionStore.getState().startSession({ length: 1, intervalMix: 1 });
-    expect(useSessionStore.getState().challenge?.type).toBe("find-the-interval");
+    const { challenge } = useSessionStore.getState();
+    expect(challenge?.type).toBe("find-the-interval");
+
+    // Find a valid root position (correct pitch, cross-string second note available)
+    const rootMidi = (challenge as unknown as IntervalChallenge).rootMidi;
+    const secondNote = (challenge as unknown as IntervalChallenge).secondNote;
+    const rootPos = getAllPositions().find(
+      (p) =>
+        fretToMidi(p.string, p.fret) === rootMidi &&
+        getValidSecondPositions(p.string, secondNote).length > 0
+    );
+    expect(rootPos).toBeTruthy();
 
     useSessionStore.getState().noteReady();
     expect(useSessionStore.getState().phase).toBe("awaiting");
 
     // First tap — should NOT advance to feedback
-    useSessionStore.getState().submitAnswer(1, 0);
+    useSessionStore.getState().submitAnswer(rootPos!.string, rootPos!.fret);
     expect(useSessionStore.getState().phase).toBe("awaiting");
-    expect(useSessionStore.getState().intervalFirstTap).toEqual({ string: 1, fret: 0 });
+    expect(useSessionStore.getState().intervalFirstTap).toEqual({ string: rootPos!.string, fret: rootPos!.fret });
     expect(useSessionStore.getState().lastResult).toBeNull();
   });
 
   it("second tap completes the challenge and sets lastResult with intervalResult", () => {
     useSessionStore.getState().startSession({ length: 1, intervalMix: 1 });
+    const { challenge } = useSessionStore.getState();
+
+    const rootMidi = (challenge as unknown as IntervalChallenge).rootMidi;
+    const secondNote = (challenge as unknown as IntervalChallenge).secondNote;
+    // Find a root position that has cross-string second note options
+    const rootPos = getAllPositions().find(
+      (p) =>
+        fretToMidi(p.string, p.fret) === rootMidi &&
+        getValidSecondPositions(p.string, secondNote).length > 0
+    );
+    // Pick any valid cross-string second position (may or may not be correct pitch)
+    const secondPos = getValidSecondPositions(rootPos!.string, secondNote)[0] as { string: number; fret: number };
+    expect(rootPos).toBeTruthy();
+
     useSessionStore.getState().noteReady();
 
     // First tap (root)
-    useSessionStore.getState().submitAnswer(1, 0);
+    useSessionStore.getState().submitAnswer(rootPos!.string, rootPos!.fret);
     expect(useSessionStore.getState().phase).toBe("awaiting");
 
-    // Second tap (second note)
-    useSessionStore.getState().submitAnswer(2, 3);
+    // Second tap (any cross-string position)
+    useSessionStore.getState().submitAnswer(secondPos.string, secondPos.fret);
     expect(useSessionStore.getState().phase).toBe("feedback");
 
     const result = useSessionStore.getState().lastResult;
     expect(result).not.toBeNull();
     expect(result!.intervalResult).toBeDefined();
-    expect(result!.intervalResult!.rootTap).toEqual({ string: 1, fret: 0 });
-    expect(result!.intervalResult!.secondTap).toEqual({ string: 2, fret: 3 });
+    expect(result!.intervalResult!.rootTap).toEqual({ string: rootPos!.string, fret: rootPos!.fret });
+    expect(result!.intervalResult!.secondTap).toEqual({ string: secondPos.string, fret: secondPos.fret });
     expect(typeof result!.intervalResult!.intervalName).toBe("string");
     expect(useSessionStore.getState().intervalFirstTap).toBeNull();
   });

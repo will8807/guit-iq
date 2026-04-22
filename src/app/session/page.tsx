@@ -24,6 +24,7 @@ export default function SessionPage() {
     sessionStartTime,
     promotedDifficulty,
     intervalFirstTap,
+    intervalRootPrompt,
     startSession,
     startChallenge,
     noteReady,
@@ -365,6 +366,29 @@ export default function SessionPage() {
           layout={layout}
         />
       </div>
+
+      {/* Root-tap rejection prompt (interval challenges) */}
+      {phase === "awaiting" && intervalRootPrompt && (
+        <div
+          role="alert"
+          className="flex items-center gap-2 px-4 py-3 bg-amber-900/60 border border-amber-600 rounded-xl text-amber-200 text-sm"
+        >
+          {intervalRootPrompt === "wrong-note" ? (
+            <>
+              <span aria-hidden>🎵</span>
+              <span>That&apos;s not the root note — try a different fret.</span>
+            </>
+          ) : (
+            <>
+              <span aria-hidden>🎸</span>
+              <span>
+                Good note! But both notes would land on the same string — try a
+                different root position.
+              </span>
+            </>
+          )}
+        </div>
+      )}
     </main>
   );
 }
