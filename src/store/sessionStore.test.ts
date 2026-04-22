@@ -663,18 +663,26 @@ describe("interval challenge in submitAnswer", () => {
     const { challenge } = useSessionStore.getState();
     expect(challenge?.type).toBe("find-the-interval");
 
+    const rootMidi = (challenge as unknown as IntervalChallenge).rootMidi;
+    const secondMidi = (challenge as unknown as IntervalChallenge).secondMidi;
+    const secondNote = (challenge as unknown as IntervalChallenge).secondNote;
+
     const positions = getAllPositions();
     const rootPos = positions.find(
-      (p) => fretToMidi(p.string, p.fret) === (challenge as unknown as IntervalChallenge).rootMidi
-    );
-    const secondPos = positions.find(
-      (p) => fretToMidi(p.string, p.fret) === (challenge as unknown as IntervalChallenge).secondMidi
+      (p) =>
+        fretToMidi(p.string, p.fret) === rootMidi &&
+        getValidSecondPositions(p.string, secondNote).length > 0
     );
     expect(rootPos).toBeTruthy();
+
+    // Pick a second position that is cross-string from the chosen root
+    const secondPos = getValidSecondPositions(rootPos!.string, secondNote).find(
+      (p) => fretToMidi(p.string, p.fret) === secondMidi
+    );
     expect(secondPos).toBeTruthy();
 
     useSessionStore.getState().noteReady();
-    useSessionStore.getState().submitAnswer(rootPos!.string, rootPos!.fret);   // first tap
+    useSessionStore.getState().submitAnswer(rootPos!.string, rootPos!.fret);    // first tap
     useSessionStore.getState().submitAnswer(secondPos!.string, secondPos!.fret); // second tap
 
     expect(useSessionStore.getState().lastResult!.correct).toBe(true);

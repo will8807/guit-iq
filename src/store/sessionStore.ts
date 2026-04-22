@@ -37,8 +37,7 @@ import {
   type Difficulty,
   type NoteStats,
 } from "@/lib/challenges/findTheNote";
-import { fretToMidi } from "@/lib/music/notes";
-import { evaluateTwoTapInterval, getValidSecondPositions } from "@/lib/challenges/findTheInterval";
+import { evaluateTwoTapInterval } from "@/lib/challenges/findTheInterval";
 import {
   generateSession,
   type Challenge,
@@ -80,13 +79,6 @@ export interface SessionState {
    * waiting for the second tap. Null for note challenges and before first tap.
    */
   intervalFirstTap: { string: number; fret: number } | null;
-  /**
-   * For interval challenges: non-null when the user's root tap was rejected.
-   * "wrong-note"  — tapped pitch doesn't match the root
-   * "same-string" — correct pitch but no cross-string second note is reachable;
-   *                  the user must pick a different root position
-   */
-  intervalRootPrompt: "wrong-note" | "same-string" | null;
   /** Per-answer history for the current session — passed to progressStore on completion */
   answers: AnswerHistory[];
 
@@ -130,7 +122,6 @@ export const useSessionStore = create<SessionState>()(
       promotedDifficulty: null,
       sessionStartTime: null,
       intervalFirstTap: null,
-      intervalRootPrompt: null,
       answers: [],
 
       startSession(config?: SessionConfig) {
@@ -154,7 +145,6 @@ export const useSessionStore = create<SessionState>()(
           promotedDifficulty: null,
           sessionStartTime: Date.now(),
           intervalFirstTap: null,
-          intervalRootPrompt: null,
           answers: [],
         });
       },
@@ -235,25 +225,8 @@ export const useSessionStore = create<SessionState>()(
         } else {
           // ── Find the Interval evaluation (two-tap) ───────────────────────
           if (intervalFirstTap === null) {
-            // First tap: validate pitch and cross-string playability before locking in
-            const tappedMidi = fretToMidi(string, fret);
-
-            if (tappedMidi !== challenge.rootMidi) {
-              // Wrong note — let the user try again without consuming the tap
-              set({ intervalRootPrompt: "wrong-note" });
-              return;
-            }
-
-            const crossStringPositions = getValidSecondPositions(string, challenge.secondNote);
-            if (crossStringPositions.length === 0) {
-              // Correct pitch but the second note can only land on the same string —
-              // not physically playable as a guitar interval
-              set({ intervalRootPrompt: "same-string" });
-              return;
-            }
-
-            // Valid root position: lock it in
-            set({ intervalFirstTap: { string, fret }, intervalRootPrompt: null });
+            // First tap: lock in as root (no upfront validation — feedback reveals correct positions)
+            set({ intervalFirstTap: { string, fret } });
             return; // don't advance to feedback yet
           }
 
@@ -267,7 +240,6 @@ export const useSessionStore = create<SessionState>()(
             phase: "feedback",
             lastResult: result,
             intervalFirstTap: null,
-            intervalRootPrompt: null,
             score: {
               correct: score.correct + (result.correct ? 1 : 0),
               total: score.total + 1,
@@ -325,7 +297,6 @@ export const useSessionStore = create<SessionState>()(
           promotedDifficulty: null,
           sessionStartTime: null,
           intervalFirstTap: null,
-          intervalRootPrompt: null,
           answers: [],
           difficulty: "easy",
           // noteStats intentionally preserved across resets
