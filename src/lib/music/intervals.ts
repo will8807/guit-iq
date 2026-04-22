@@ -28,11 +28,13 @@ export const INTERVAL_POOL: Record<string, string[]> = {
   hard: ["M2", "m2", "M3", "m3", "TT", "P4", "P5", "m6", "M6"]
 }
 
+export type IntervalWithKey = Interval & { key: string }
+
 export function getIntervalByKey(key: string): Interval | undefined {
   return INTERVALS[key]
 }
 
-export function pickIntervalForDifficulty(difficulty: string, rand = Math.random): Interval {
+export function pickIntervalForDifficulty(difficulty: string, rand = Math.random): IntervalWithKey {
   const maybe = INTERVAL_POOL[difficulty]
   const pool = (maybe ?? INTERVAL_POOL.medium) as string[]
   // pool is guaranteed now; pick a random key from the pool
@@ -41,7 +43,7 @@ export function pickIntervalForDifficulty(difficulty: string, rand = Math.random
   const interval = INTERVALS[key as keyof typeof INTERVALS]
   if (!interval) {
     // fallback to a known interval (perfect 5th)
-    return INTERVALS["P5"]!
+    return { ...INTERVALS["P5"]!, key: "P5" }
   }
-  return interval
+  return { ...interval, key: key! }
 }

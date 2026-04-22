@@ -73,14 +73,12 @@ export function generateIntervalChallenge(difficulty = "medium", rand = Math.ran
   const rootNote = midiToNote(rootMidi)
   const secondNote = midiToNote(secondMidi)
 
-  const intervalKey = interval.name
-
   return {
     rootMidi: rootMidi as number,
     secondMidi,
     rootNote,
     secondNote,
-    intervalKey,
+    intervalKey: interval.key,
     intervalName: interval.name,
     difficulty,
   }

@@ -60,6 +60,12 @@ const HIGHLIGHT_CLASSES: Record<HighlightVariant, string> = {
   hint: "bg-yellow-400",
 };
 
+const LABEL_CLASSES: Record<HighlightVariant, string> = {
+  correct: "text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]",
+  incorrect: "text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]",
+  hint: "text-zinc-900",
+};
+
 const SINGLE_DOT_FRETS = new Set([3, 5, 7, 9]);
 
 function getHighlight(
@@ -132,10 +138,10 @@ function FretCell({ string, fret, highlight, disabled, isNut, nutEdge, handleTap
       {highlight && (
         <span
           aria-hidden="true"
-          className={`w-7 h-7 rounded-full z-10 flex items-center justify-center ${HIGHLIGHT_CLASSES[highlight.variant]}`}
+          className={`w-8 h-8 rounded-full z-10 flex items-center justify-center ${HIGHLIGHT_CLASSES[highlight.variant]}`}
         >
           {highlight.label && (
-            <span className="text-[8px] font-bold leading-none text-white select-none">
+            <span className={`text-[11px] font-black leading-none select-none ${LABEL_CLASSES[highlight.variant]}`}>
               {highlight.label}
             </span>
           )}
