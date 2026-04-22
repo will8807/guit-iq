@@ -285,7 +285,9 @@ function LandscapeFretboard({ highlights, disabled, handleTap }: LayoutProps) {
 
           {/* Inter-string dot strip — between string pairs 3/4 (idx 2/3) and 4/5 (idx 3/4) */}
           {stringIdx === 2 && (
-            <div aria-hidden="true" className="flex h-3">
+            <div aria-hidden="true" className="flex h-3 relative">
+              {/* Horizontal rule keeps the fret grid visually continuous */}
+              <div className="absolute top-1/2 -translate-y-1/2 left-6 right-0 h-px bg-zinc-700 pointer-events-none" />
               <div className="w-6 shrink-0" />
               <div className="relative flex flex-1">
                 {FRETS.map((fret) => (
