@@ -149,23 +149,27 @@ export default function SessionPage() {
       highlights.push({
         ...ir.rootTap,
         variant: ir.rootCorrect ? "correct" : "incorrect",
+        label: "R",
       });
       highlights.push({
         ...ir.secondTap,
         variant: ir.secondCorrect ? "correct" : "incorrect",
       });
+      // Interval key label for hint circles (e.g. "P5", "m3")
+      const intervalKey =
+        challenge?.type === "find-the-interval" ? challenge.intervalKey : undefined;
       // Reveal hints for incorrect taps
       if (!ir.rootCorrect) {
         for (const pos of ir.rootValidPositions) {
           if (pos.string !== ir.rootTap.string || pos.fret !== ir.rootTap.fret) {
-            highlights.push({ ...pos, variant: "hint" });
+            highlights.push({ ...pos, variant: "hint", label: "R" });
           }
         }
       }
       if (!ir.secondCorrect) {
         for (const pos of ir.secondValidPositions) {
           if (pos.string !== ir.secondTap.string || pos.fret !== ir.secondTap.fret) {
-            highlights.push({ ...pos, variant: "hint" });
+            highlights.push({ ...pos, variant: "hint", label: intervalKey });
           }
         }
       }

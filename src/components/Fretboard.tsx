@@ -31,6 +31,8 @@ export type HighlightVariant = "correct" | "incorrect" | "hint";
 
 export interface FretHighlight extends FretPosition {
   variant: HighlightVariant;
+  /** Short label rendered inside the highlight circle (e.g. "R", "P5", "m3") */
+  label?: string;
 }
 
 interface FretboardProps {
@@ -130,8 +132,14 @@ function FretCell({ string, fret, highlight, disabled, isNut, nutEdge, handleTap
       {highlight && (
         <span
           aria-hidden="true"
-          className={`w-7 h-7 rounded-full z-10 block ${HIGHLIGHT_CLASSES[highlight.variant]}`}
-        />
+          className={`w-7 h-7 rounded-full z-10 flex items-center justify-center ${HIGHLIGHT_CLASSES[highlight.variant]}`}
+        >
+          {highlight.label && (
+            <span className="text-[8px] font-bold leading-none text-white select-none">
+              {highlight.label}
+            </span>
+          )}
+        </span>
       )}
     </button>
   );
