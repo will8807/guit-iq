@@ -100,5 +100,29 @@ export function generateSession(config: SessionConfig = {}): Challenge[] {
     [challenges[i], challenges[j]] = [challenges[j]!, challenges[i]!];
   }
 
+  // Prevent consecutive duplicates — redraw any challenge whose target key
+  // matches the immediately preceding challenge (same note or same interval).
+  function challengeKey(c: Challenge): string {
+    return c.type === "find-the-note" ? c.targetNote : c.intervalKey;
+  }
+
+  const MAX_RETRIES = 10;
+  for (let i = 1; i < challenges.length; i++) {
+    let retries = 0;
+    while (
+      challengeKey(challenges[i]!) === challengeKey(challenges[i - 1]!) &&
+      retries < MAX_RETRIES
+    ) {
+      if (challenges[i]!.type === "find-the-note") {
+        const base = generateWeightedChallenge(difficulty, noteStats);
+        challenges[i] = { ...base, type: "find-the-note" };
+      } else {
+        const base = generateIntervalChallenge(difficulty);
+        challenges[i] = { ...base, type: "find-the-interval" };
+      }
+      retries++;
+    }
+  }
+
   return challenges;
 }
