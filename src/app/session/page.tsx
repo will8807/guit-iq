@@ -331,36 +331,38 @@ export default function SessionPage() {
         </div>
       </div>
 
-      {/* Prompt or Feedback */}
-      {(phase === "playing" || phase === "awaiting") && (
-        <ChallengePrompt
-          isPlaying={isPlaying}
-          onReplay={handleReplay}
-          challengeType={challenge?.type ?? "find-the-note"}
-          intervalStep={intervalFirstTap ? 2 : 1}
-          intervalName={
-            showRoot && challenge?.type === "find-the-interval"
-              ? (challenge as { intervalName: string }).intervalName
-              : undefined
-          }
-          rootNote={
-            showRoot && !isPlaying
-              ? challenge?.type === "find-the-interval"
-                ? (challenge as { rootNote: string }).rootNote
-                : challenge?.type === "find-the-note"
-                  ? (challenge as { targetNote: string }).targetNote
-                  : undefined
-              : undefined
-          }
-        />
-      )}
-      {phase === "feedback" && lastResult && (
-        <ChallengeFeedback
-          result={lastResult}
-          score={score}
-          onNext={handleNext}
-        />
-      )}
+      {/* Prompt or Feedback — fixed height so the fretboard never shifts */}
+      <div className="h-24 shrink-0 flex flex-col justify-center">
+        {(phase === "playing" || phase === "awaiting") && (
+          <ChallengePrompt
+            isPlaying={isPlaying}
+            onReplay={handleReplay}
+            challengeType={challenge?.type ?? "find-the-note"}
+            intervalStep={intervalFirstTap ? 2 : 1}
+            intervalName={
+              showRoot && challenge?.type === "find-the-interval"
+                ? (challenge as { intervalName: string }).intervalName
+                : undefined
+            }
+            rootNote={
+              showRoot && !isPlaying
+                ? challenge?.type === "find-the-interval"
+                  ? (challenge as { rootNote: string }).rootNote
+                  : challenge?.type === "find-the-note"
+                    ? (challenge as { targetNote: string }).targetNote
+                    : undefined
+                : undefined
+            }
+          />
+        )}
+        {phase === "feedback" && lastResult && (
+          <ChallengeFeedback
+            result={lastResult}
+            score={score}
+            onNext={handleNext}
+          />
+        )}
+      </div>
 
       {/* Fretboard */}
       <div className="bg-zinc-800 rounded-xl p-3 flex-1">
