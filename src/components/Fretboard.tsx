@@ -289,7 +289,13 @@ function LandscapeFretboard({ highlights, disabled, handleTap }: LayoutProps) {
               <div className="w-6 shrink-0" />
               <div className="relative flex flex-1">
                 {FRETS.map((fret) => (
-                  <div key={fret} className={`flex-1 flex items-center justify-center${fret === 0 ? " border-l-4 border-l-zinc-300" : ""}`}>
+                  <div
+                    key={fret}
+                    className={[
+                      "flex-1 flex items-center justify-center border-r border-r-zinc-700",
+                      fret === 0 ? "border-l-4 border-l-zinc-300" : "",
+                    ].join(" ")}
+                  >
                     {SINGLE_DOT_FRETS.has(fret) && (
                       <span className="w-2 h-2 rounded-full bg-zinc-400" />
                     )}
