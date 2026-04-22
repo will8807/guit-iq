@@ -176,19 +176,17 @@ export default function SessionPage() {
         }
       }
     } else {
-      // Note feedback: existing single-tap logic
+      // Note feedback: mark tapped position, then reveal all other valid positions as hints
       highlights.push({
         ...lastResult.tappedPosition,
         variant: lastResult.correct ? "correct" : "incorrect",
       });
-      if (!lastResult.correct) {
-        for (const pos of lastResult.validPositions) {
-          if (
-            pos.string !== lastResult.tappedPosition.string ||
-            pos.fret !== lastResult.tappedPosition.fret
-          ) {
-            highlights.push({ ...pos, variant: "hint" });
-          }
+      for (const pos of lastResult.validPositions) {
+        if (
+          pos.string !== lastResult.tappedPosition.string ||
+          pos.fret !== lastResult.tappedPosition.fret
+        ) {
+          highlights.push({ ...pos, variant: "hint" });
         }
       }
     }
