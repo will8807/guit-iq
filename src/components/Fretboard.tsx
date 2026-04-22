@@ -237,6 +237,12 @@ function PortraitFretboard({ highlights, disabled, handleTap }: LayoutProps) {
 // ─── Landscape layout ────────────────────────────────────────────────────────
 // Strings = rows (low E top → high e bottom), Frets = columns (nut left → 12 right)
 
+// Pre-compute dot left positions as percentages of the fret-area width.
+// Fret columns are flex-1 across 13 slots (0–12), so each slot = 1/13 of the area.
+const DOT_LEFT: Record<number, string> = Object.fromEntries(
+  FRETS.map((f) => [f, `${((f + 0.5) / 13) * 100}%`])
+);
+
 function LandscapeFretboard({ highlights, disabled, handleTap }: LayoutProps) {
   return (
     <div role="grid" aria-label="Guitar fretboard" className="w-full select-none">
@@ -250,15 +256,16 @@ function LandscapeFretboard({ highlights, disabled, handleTap }: LayoutProps) {
         ))}
       </div>
 
-      {STRINGS_LANDSCAPE.map((string, stringIdx) => (
-        <div key={string}>
-          <div role="row" className="flex items-center">
+      {/* String rows + inlay dot overlay */}
+      <div className="relative">
+        {STRINGS_LANDSCAPE.map((string) => (
+          <div key={string} role="row" className="flex items-center">
             {/* String label */}
             <div aria-hidden="true" className="w-6 shrink-0 text-center text-[10px] text-zinc-500">
               {STRING_NAMES[string]}
             </div>
 
-            <div className="relative flex flex-1">
+            <div className="flex flex-1">
               {FRETS.map((fret) => (
                 <FretCell
                   key={fret}
@@ -272,45 +279,30 @@ function LandscapeFretboard({ highlights, disabled, handleTap }: LayoutProps) {
                   className="flex-1 h-10 border-r border-r-zinc-700"
                 />
               ))}
-
-              {/* Inlay dots — between strings 3 & 4 (stringIdx 2 = string 4, between idx 2 and 3) */}
-              {stringIdx === 2 && SINGLE_DOT_FRETS.size > 0 && (
-                // We render the dot strip as an overlay after string row index 2 (string 4 / D)
-                // by using a pseudo-absolute trick — actually we put these in the next sibling
-                // so nothing here; handled in the inter-row strip below
-                null
-              )}
             </div>
           </div>
+        ))}
 
-          {/* Inter-string dot strip — between string pairs 3/4 (idx 2/3) and 4/5 (idx 3/4) */}
-          {stringIdx === 2 && (
-            <div aria-hidden="true" className="flex h-3 relative">
-              {/* Horizontal rule keeps the fret grid visually continuous */}
-              <div className="absolute top-1/2 -translate-y-1/2 left-6 right-0 h-px bg-zinc-700 pointer-events-none" />
-              <div className="w-6 shrink-0" />
-              <div className="relative flex flex-1">
-                {FRETS.map((fret) => (
-                  <div
-                    key={fret}
-                    className={[
-                      "flex-1 flex items-center justify-center border-r border-r-zinc-700",
-                      fret === 0 ? "border-l-4 border-l-zinc-300" : "",
-                    ].join(" ")}
-                  >
-                    {SINGLE_DOT_FRETS.has(fret) && (
-                      <span className="w-2 h-2 rounded-full bg-zinc-400" />
-                    )}
-                    {fret === 12 && (
-                      <span className="w-2 h-2 rounded-full bg-zinc-400" />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+        {/* Inlay dots — absolutely overlaid so they don't break the fret grid */}
+        <div aria-hidden="true" className="absolute left-6 right-0 top-0 bottom-0 pointer-events-none">
+          {[...SINGLE_DOT_FRETS].map((fret) => (
+            <span
+              key={fret}
+              className="absolute w-2.5 h-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-zinc-400"
+              style={{ left: DOT_LEFT[fret], top: "50%" }}
+            />
+          ))}
+          {/* Double dot at fret 12 */}
+          <span
+            className="absolute w-2.5 h-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-zinc-400"
+            style={{ left: DOT_LEFT[12], top: "33%" }}
+          />
+          <span
+            className="absolute w-2.5 h-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-zinc-400"
+            style={{ left: DOT_LEFT[12], top: "67%" }}
+          />
         </div>
-      ))}
+      </div>
     </div>
   );
 }
