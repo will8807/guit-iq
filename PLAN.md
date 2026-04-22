@@ -379,6 +379,63 @@ This toggle is a per-session setting, not per-challenge. It affects Find the Not
 
 ---
 
+### F-09 · "Find the Chord" Challenge Mode
+
+**Goal:** The system plays a guitar chord. The user must identify and tap all the notes of that chord on the fretboard.
+
+**User story:** As a user, I hear a chord strummed and I tap all the notes I think are in it, one fret at a time. The system tells me which notes I got right and which I missed, helping me build the ear-to-fretboard connection for chords.
+
+**Gameplay context — Show Root toggle:**
+- **Show Root ON:** The root note position is highlighted on the fretboard before the user taps. The chord name (e.g. "G Major") is shown in the prompt. This is the recommended starting point for users new to chord ear training.
+- **Show Root OFF:** No visual hints — the user identifies chord tones entirely by ear.
+
+**Acceptance criteria:**
+- System plays a chord (all notes simultaneously) via the audio engine
+- Prompt says "Tap the notes of this chord" (Show Root OFF) or "Tap the notes of this [chord name]" (Show Root ON)
+- User taps fret positions one at a time; each tap plays back its note
+- Evaluation: correct when the user has tapped a set of positions that covers all required pitch classes (in any voicing, any octave)
+- A "Done" button appears after the first tap, allowing the user to submit their answer with fewer taps if they are confident
+- Feedback:
+  - Each tapped position shows green (correct pitch class) or red (wrong pitch class)
+  - Any missed pitch classes are revealed in blue with their interval label (R, 3, 5, 7, etc.)
+  - Chord name and note list always shown as educational context after answer
+- "Replay" button replays the chord
+- Chord library covers: triads (major, minor, diminished, augmented) and dominant 7th chords; extended chords (maj7, m7, m7b5) at higher difficulty
+
+**Implementation notes:**
+- `lib/music/chords.ts`:
+  - `CHORDS: Record<string, ChordDef>` — maps short key (e.g. `"Maj"`, `"min"`, `"dom7"`) to `{ name, intervals: number[] }`
+  - `CHORD_POOL: Record<Difficulty, string[]>` — controls which chord types appear at each level
+  - `pickChordForDifficulty(difficulty, rand): ChordDefWithKey`
+  - `buildChordVoicing(rootMidi, intervals): number[]` — returns MIDI values for all chord tones
+- `lib/challenges/findTheChord.ts`:
+  - `FindTheChordChallenge` type: `{ rootMidi, rootNote, chordKey, chordName, midiNotes, pitchClasses: Set<number> }`
+  - `generateChordChallenge(difficulty): FindTheChordChallenge`
+  - `evaluateChordAnswer(challenge, tappedPositions): ChordEvaluationResult`
+    - Evaluation is pitch-class based: for each tap, check `fretToMidi(s,f) % 12` against `challenge.pitchClasses`
+    - Returns per-tap correctness + set of missed pitch classes
+- `store/sessionStore.ts` additions:
+  - `chordTaps: FretPosition[]` — accumulates taps during the chord challenge
+  - `submitChordAnswer()` — finalises and evaluates when user taps "Done"
+- Difficulty config additions: `chordMix` (fraction of chord challenges, default 0); chord type pool per difficulty level
+
+**Difficulty progression:**
+| Level | Chord pool |
+|---|---|
+| Easy | Major triads, minor triads |
+| Medium | + diminished, augmented, dominant 7th |
+| Hard | + maj7, m7, m7b5, sus2, sus4 |
+
+**Testing requirements:**
+- Unit test: `buildChordVoicing` returns correct MIDI notes for known root + interval set
+- Unit test: `evaluateChordAnswer` — all pitch classes tapped → correct; missing pitch class → incorrect; extra/wrong taps → incorrect; enharmonic equivalence
+- Unit test: `generateChordChallenge` returns chord within difficulty pool
+- Component test: multi-tap accumulation works; "Done" button triggers evaluation; feedback renders per-note correctness
+- Component test: Show Root ON shows chord name + root highlight; OFF shows neither
+- E2E test: complete 3 chord challenges
+
+---
+
 ## 5. Technical Architecture
 
 ### Frontend
@@ -508,7 +565,7 @@ This toggle is a per-session setting, not per-challenge. It affects Find the Not
 
 ---
 
-### Milestone 5 — Interval Challenge + Show Root + Difficulty + Persistence
+### Milestone 5 — Intervals + Difficulty + Persistence
 > **Outcome:** Two challenge modes (note + interval), Show Root toggle for both, adaptive difficulty, progress persists across sessions.
 
 - `lib/challenges/findTheInterval.ts`
@@ -519,6 +576,20 @@ This toggle is a per-session setting, not per-challenge. It affects Find the Not
 - `/progress` screen
 - `/settings` screen (includes Show Root toggle)
 - E2E test: mixed-mode session with difficulty adjustment
+
+---
+
+### Milestone 6 — Chord Challenge
+> **Outcome:** Three challenge modes (note + interval + chord). User hears a chord and taps all its pitch classes on the fretboard in any voicing.
+
+- `lib/music/chords.ts` — chord definitions, pools per difficulty
+- `lib/challenges/findTheChord.ts` — generation + pitch-class evaluation
+- Multi-tap chord UI (accumulate taps → "Done" → feedback)
+- Show Root toggle for chords (highlights root + shows chord name)
+- Session generator supports `chordMix` config param
+- Difficulty engine extended with chord type pool progression
+- E2E test: complete 3 chord challenges
+- E2E test: chord challenge with Show Root ON
 
 ---
 
@@ -642,6 +713,39 @@ This toggle is a per-session setting, not per-challenge. It affects Find the Not
 - [x] **M5.14** Integration test: difficulty adjusts after 20 correct answers
 - [x] **M5.15** E2E test: complete mixed-mode session → progress screen updated
 - [x] **M5.16** Lighthouse mobile audit ≥ 85 — verified via axe-core/Playwright: 5/5 WCAG 2A/2AA accessibility tests pass on all key routes (landing, session init, idle/difficulty, fretboard, feedback)
+
+### Milestone 6 — Chord Challenge
+- [ ] **M6.1** Create `lib/music/chords.ts`
+  - [ ] `CHORDS` record: major, minor, diminished, augmented, dom7, maj7, m7, m7b5, sus2, sus4
+  - [ ] `CHORD_POOL` per difficulty (easy: Maj/min, medium: + dim/aug/dom7, hard: + maj7/m7/m7b5/sus)
+  - [ ] `pickChordForDifficulty(difficulty, rand): ChordDefWithKey`
+  - [ ] `buildChordVoicing(rootMidi, intervals): number[]`
+- [ ] **M6.2** Unit tests for `chords.ts` — voicing builder, pool sampling, all chord types produce correct intervals
+- [ ] **M6.3** Create `lib/challenges/findTheChord.ts`
+  - [ ] `FindTheChordChallenge` type: `{ rootMidi, rootNote, chordKey, chordName, midiNotes, pitchClasses }`
+  - [ ] `generateChordChallenge(difficulty): FindTheChordChallenge`
+  - [ ] `evaluateChordAnswer(challenge, tappedPositions): ChordEvaluationResult`
+- [ ] **M6.4** Unit tests for chord challenge generation + evaluation (all correct, partial, enharmonics, extra taps)
+- [ ] **M6.5** Extend `sessionStore.ts` for chord challenge flow
+  - [ ] `chordTaps: FretPosition[]` accumulator
+  - [ ] `addChordTap(string, fret)` — appends tap, plays note
+  - [ ] `submitChordAnswer()` — evaluates and transitions to feedback phase
+  - [ ] `ChordEvaluationResult` threaded into `lastResult`
+- [ ] **M6.6** Unit tests for session store chord transitions (idle → playing → awaiting → feedback)
+- [ ] **M6.7** Build chord challenge UI
+  - [ ] Prompt: "Tap all the notes of this chord" + replay button
+  - [ ] Fretboard: multi-tap accumulation, each tap shows blue "pending" highlight + plays note
+  - [ ] "Done" button appears after first tap to submit answer
+  - [ ] Feedback: per-tap green/red + missed pitch classes revealed in blue with interval labels
+  - [ ] Post-feedback: chord name + note list always shown as educational context
+- [ ] **M6.8** Show Root toggle for chords: highlight root position + show chord name in prompt when ON
+- [ ] **M6.9** Extend `sessionGenerator.ts` with `chordMix` config param
+- [ ] **M6.10** Extend `/settings` screen with chord challenge toggle
+- [ ] **M6.11** Extend difficulty engine: chord type pool widens with difficulty level
+- [ ] **M6.12** Component tests: multi-tap sequence, "Done" submission, all feedback states, Show Root ON/OFF
+- [ ] **M6.13** E2E test: complete 3 chord challenges
+- [ ] **M6.14** E2E test: chord challenge with Show Root ON — chord name shown, root highlighted
+- [ ] **M6.15** Accessibility audit on chord challenge UI
 
 ---
 
@@ -847,7 +951,7 @@ Items that are known, scoped, but deliberately deferred. Pick up when relevant.
 | ID | Item | Context |
 |---|---|---|
 | **BL-01** | Fix Mobile Safari E2E tests | All 13 Mobile Safari tests in `e2e/session.spec.ts` and `e2e/accessibility.spec.ts` are failing. Desktop Chrome and Mobile Chrome pass. Root cause is likely WebKit not being installed in the local Playwright setup (`playwright install webkit` not run) combined with possible `--disable-web-security` launch arg not being supported on WebKit. Fix: install WebKit (`pnpm exec playwright install webkit`), remove or conditionally apply the `--disable-web-security` arg for WebKit projects, verify the audio stub works under WebKit's stricter security model. |
-| **BL-02** | Chord inversion challenges | Add a challenge mode where the user hears a chord inversion (root, 1st, 2nd, etc.) and must find the notes on the fretboard. Requires: chord voicing library, multi-tap input (3+ notes), inversion-aware evaluation. Show Root toggle would highlight the root note of the chord. Depends on a future "Find the Chord" milestone being built first. |
+| ~~**BL-02**~~ | ~~Chord inversion challenges~~ | _Superseded by Milestone 6 (Find the Chord). Chord inversions will be part of the hard difficulty pool in M6 once the base chord mode is complete._ |
 | **BL-03** | In-app chromatic tuner | A simple chromatic tuner accessible from the session screen (e.g., a tuner icon in the header) so users can tune their guitar without leaving the app. Uses the Web Audio API + `getUserMedia` microphone input to detect pitch via autocorrelation or a library like `pitchfinder`. Displays the nearest note, cents deviation, and a visual needle. Gated behind a mic permission request. No effect on session state — purely a utility overlay. Deferred because it requires microphone access (a separate permission flow) and is not core to the hear→play loop. |
 
 ---
