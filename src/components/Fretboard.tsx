@@ -158,6 +158,8 @@ function FretCell({ string, fret, highlight, disabled, isNut, nutEdge, handleTap
       {highlight && (
         <span
           aria-hidden="true"
+          data-variant={highlight.variant}
+          data-label={highlight.label}
           className={`w-8 h-8 rounded-full z-10 flex items-center justify-center ${HIGHLIGHT_CLASSES[highlight.variant]}`}
         >
           {highlight.label && (

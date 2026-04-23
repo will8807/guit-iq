@@ -127,8 +127,9 @@ export default function ChallengePrompt({
                 ? "Chord"
                 : "Note"}
           </span>
-          <span className="text-sm font-bold text-amber-400 bg-zinc-800 px-2.5 py-0.5 rounded-md tracking-wide">
-            {rootNote}
+          <span className="text-sm font-bold text-amber-400 bg-zinc-800 px-2.5 py-0.5 rounded-md tracking-wide"
+            data-testid={challengeType === "find-the-chord" ? "chord-label" : undefined}
+          >            {rootNote}
           </span>
         </div>
       )}

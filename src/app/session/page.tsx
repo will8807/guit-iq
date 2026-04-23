@@ -45,7 +45,7 @@ export default function SessionPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
 
-  const { showRoot, setShowRoot, intervalMix, chordMix } = useSettingsStore();
+  const { showRoot, setShowRoot, intervalMix, chordMix, sessionLength } = useSettingsStore();
 
   // Orientation: auto-detect + manual override
   const autoLayout = useOrientation();
@@ -116,7 +116,7 @@ export default function SessionPage() {
   }
 
   function handleStart() {
-    startSession({ difficulty, intervalMix, chordMix });
+    startSession({ length: sessionLength, difficulty, intervalMix, chordMix });
   }
 
   function handleFretboardSelect(string: number, fret: number) {
@@ -149,7 +149,7 @@ export default function SessionPage() {
   }
 
   function handlePlayAgain() {
-    startSession({ difficulty, intervalMix, chordMix });
+    startSession({ length: sessionLength, difficulty, intervalMix, chordMix });
   }
 
   // ── Highlights ────────────────────────────────────────────────────────────
