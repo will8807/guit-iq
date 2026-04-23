@@ -30,11 +30,13 @@ export default function SessionPage() {
     intervalSecondTap,
     intervalSameStringHint,
     chordTaps,
+    findAllTaps,
     startSession,
     startChallenge,
     noteReady,
     submitAnswer,
     submitChordAnswer,
+    submitFindAllAnswer,
     submitIntervalAnswer,
     nextChallenge,
     setDifficulty,
@@ -45,7 +47,7 @@ export default function SessionPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
 
-  const { showRoot, setShowRoot, intervalMix, chordMix, sessionLength } = useSettingsStore();
+  const { showRoot, setShowRoot, intervalMix, chordMix, findAllMix, sessionLength } = useSettingsStore();
 
   // Orientation: auto-detect + manual override
   const autoLayout = useOrientation();
@@ -63,6 +65,7 @@ export default function SessionPage() {
   function getChallengeNotes(c: Challenge): string[] {
     if (c.type === "find-the-note") return [c.targetNote];
     if (c.type === "find-the-interval") return [c.rootNote, c.secondNote];
+    if (c.type === "find-all-positions") return [c.targetNote];
     // Chord: map midi numbers to note names for arpeggio playback
     return c.midiNotes.map((m) => midiToNote(m));
   }
@@ -116,7 +119,7 @@ export default function SessionPage() {
   }
 
   function handleStart() {
-    startSession({ length: sessionLength, difficulty, intervalMix, chordMix });
+    startSession({ length: sessionLength, difficulty, intervalMix, chordMix, findAllMix });
   }
 
   function handleFretboardSelect(string: number, fret: number) {
@@ -149,7 +152,7 @@ export default function SessionPage() {
   }
 
   function handlePlayAgain() {
-    startSession({ length: sessionLength, difficulty, intervalMix, chordMix });
+    startSession({ length: sessionLength, difficulty, intervalMix, chordMix, findAllMix });
   }
 
   // ── Highlights ────────────────────────────────────────────────────────────
@@ -176,6 +179,16 @@ export default function SessionPage() {
     }
   }
 
+  if (phase === "awaiting" && challenge?.type === "find-all-positions") {
+    // Show accumulated taps as hints
+    for (const tap of findAllTaps) {
+      const isValid = challenge.validPositions.some(
+        (p) => p.string === tap.string && p.fret === tap.fret,
+      );
+      highlights.push({ ...tap, variant: isValid ? "correct" : "incorrect" });
+    }
+  }
+
   if (phase === "awaiting" && challenge?.type === "find-the-chord") {
     // Show all accumulated chord taps as hint dots
     for (const tap of chordTaps) {
@@ -197,7 +210,23 @@ export default function SessionPage() {
   if (phase === "feedback" && lastResult) {
     const ir = lastResult.intervalResult;
     const cr = lastResult.chordResult;
-    if (cr) {
+    const far = lastResult.findAllResult;
+    if (far) {
+      // Find-all feedback: per-tap correct/incorrect + missed positions as hints
+      for (const tap of far.tapResults) {
+        highlights.push({
+          ...tap.position,
+          variant: tap.correct ? "correct" : "incorrect",
+        });
+      }
+      const tappedKeys = new Set(far.tapResults.map((t) => `${t.position.string}-${t.position.fret}`));
+      for (const pos of far.missedPositions) {
+        const key = `${pos.string}-${pos.fret}`;
+        if (!tappedKeys.has(key)) {
+          highlights.push({ ...pos, variant: "hint", label: challenge?.type === "find-all-positions" ? challenge.targetNote.replace(/\d/, "") : undefined });
+        }
+      }
+    } else if (cr) {
       // Chord feedback: per-tap correct/incorrect highlights
       for (const tap of cr.tapResults) {
         highlights.push({
@@ -414,7 +443,11 @@ export default function SessionPage() {
                 : undefined
             }
             chordTapCount={
-              challenge?.type === "find-the-chord" ? chordTaps.length : 0
+              challenge?.type === "find-the-chord"
+                ? chordTaps.length
+                : challenge?.type === "find-all-positions"
+                  ? findAllTaps.length
+                  : 0
             }
             rootNote={
               showRoot && !isPlaying
@@ -424,7 +457,9 @@ export default function SessionPage() {
                     ? (challenge as { targetNote: string }).targetNote
                     : challenge?.type === "find-the-chord"
                       ? (challenge as { chordLabel: string }).chordLabel
-                      : undefined
+                      : challenge?.type === "find-all-positions"
+                        ? (challenge as { targetNote: string }).targetNote
+                        : undefined
                 : undefined
             }
           />
@@ -452,6 +487,22 @@ export default function SessionPage() {
             ].join(" ")}
           >
             Done ({chordTaps.length} tap{chordTaps.length !== 1 ? "s" : ""})
+          </button>
+        </div>
+      )}
+      {phase === "awaiting" && challenge?.type === "find-all-positions" && (
+        <div className="flex justify-center">
+          <button
+            onClick={submitFindAllAnswer}
+            disabled={findAllTaps.length === 0}
+            className={[
+              "px-8 py-3 rounded-full font-semibold text-white text-sm transition-colors",
+              findAllTaps.length > 0
+                ? "bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700"
+                : "bg-zinc-700 opacity-40 cursor-not-allowed",
+            ].join(" ")}
+          >
+            Done ({findAllTaps.length} tap{findAllTaps.length !== 1 ? "s" : ""})
           </button>
         </div>
       )}

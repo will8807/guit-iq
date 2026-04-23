@@ -28,7 +28,7 @@ interface ChallengePromptProps {
   /** Called when the user taps the replay button */
   onReplay: () => void;
   /** Challenge type — controls prompt text */
-  challengeType?: "find-the-note" | "find-the-interval" | "find-the-chord";
+  challengeType?: "find-the-note" | "find-the-interval" | "find-the-chord" | "find-all-positions";
   /**
    * For interval challenges: 1 = waiting for root tap, 2 = waiting for second-note tap.
    * Ignored for note/chord challenges.
@@ -54,12 +54,13 @@ interface ChallengePromptProps {
 
 function getPromptText(
   isPlaying: boolean,
-  challengeType: "find-the-note" | "find-the-interval" | "find-the-chord",
+  challengeType: "find-the-note" | "find-the-interval" | "find-the-chord" | "find-all-positions",
   intervalStep: 1 | 2,
   intervalName?: string,
 ): string {
   if (isPlaying) return "🎵 Listen…";
   if (challengeType === "find-the-chord") return "Tap all chord tones";
+  if (challengeType === "find-all-positions") return "Find every position for this note";
   if (challengeType === "find-the-interval") {
     // Show Root ON: interval name provided, root is pre-filled — single tap
     if (intervalName) return `Find the ${intervalName}`;
@@ -92,8 +93,8 @@ export default function ChallengePrompt({
             </span>
           )}
 
-          {/* Tap counter for chord challenges */}
-          {challengeType === "find-the-chord" && !isPlaying && chordTapCount > 0 && (
+          {/* Tap counter for chord/find-all challenges */}
+          {(challengeType === "find-the-chord" || challengeType === "find-all-positions") && !isPlaying && chordTapCount > 0 && (
             <span className="text-xs text-indigo-300 bg-zinc-800 px-2 py-0.5 rounded-full shrink-0">
               {chordTapCount} tapped
             </span>
@@ -125,7 +126,9 @@ export default function ChallengePrompt({
               ? "Root"
               : challengeType === "find-the-chord"
                 ? "Chord"
-                : "Note"}
+                : challengeType === "find-all-positions"
+                  ? "Note"
+                  : "Note"}
           </span>
           <span className="text-sm font-bold text-amber-400 bg-zinc-800 px-2.5 py-0.5 rounded-md tracking-wide"
             data-testid={challengeType === "find-the-chord" ? "chord-label" : undefined}

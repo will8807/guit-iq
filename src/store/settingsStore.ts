@@ -12,8 +12,9 @@
  *
  *            When false (default): no visual hints — pure ear-to-fretboard training.
  *
- * intervalMix — fraction of session challenges that are "Find the Interval" (0–1, default 0.33)
- * chordMix    — fraction of session challenges that are "Find the Chord"    (0–1, default 0.33)
+ * intervalMix — fraction of session challenges that are "Find the Interval"   (0–1, default 0.33)
+ * chordMix    — fraction of session challenges that are "Find the Chord"       (0–1, default 0.33)
+ * findAllMix  — fraction of session challenges that are "Find All Positions"   (0–1, default 0)
  */
 
 import { create } from "zustand";
@@ -31,6 +32,9 @@ export interface SettingsState {
   /** Fraction of session that is chord challenges (0–1, default 0.33) */
   chordMix: number;
   setChordMix: (v: number) => void;
+  /** Fraction of session that is find-all-positions challenges (0–1, default 0) */
+  findAllMix: number;
+  setFindAllMix: (v: number) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -44,6 +48,8 @@ export const useSettingsStore = create<SettingsState>()(
       setIntervalMix: (v) => set({ intervalMix: Math.min(1, Math.max(0, v)) }),
       chordMix: 0.33,
       setChordMix: (v) => set({ chordMix: Math.min(1, Math.max(0, v)) }),
+      findAllMix: 0,
+      setFindAllMix: (v) => set({ findAllMix: Math.min(1, Math.max(0, v)) }),
     }),
     { name: "guitiq-settings" }
   )
