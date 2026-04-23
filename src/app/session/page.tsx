@@ -3,7 +3,7 @@
 import { useEffect, useCallback, useState } from "react";
 import { useSessionStore } from "@/store/sessionStore";
 import { useSettingsStore } from "@/store/settingsStore";
-import { initAudio, playNote, isAudioReady } from "@/lib/audio/engine";
+import { initAudio, playNote, playChord, isAudioReady } from "@/lib/audio/engine";
 import Fretboard, { type FretHighlight } from "@/components/Fretboard";
 import ChallengePrompt from "@/components/ChallengePrompt";
 import ChallengeFeedback from "@/components/ChallengeFeedback";
@@ -12,6 +12,8 @@ import { useOrientation, type FretboardLayout } from "@/hooks/useOrientation";
 import type { Difficulty } from "@/lib/challenges/findTheNote";
 import type { Challenge } from "@/lib/session/sessionGenerator";
 import { getAllPositionsForNote } from "@/lib/music/fretboard";
+import { midiToNote } from "@/lib/music/notes";
+import { getValidSecondPositions } from "@/lib/challenges/findTheInterval";
 
 export default function SessionPage() {
   const {
@@ -25,10 +27,15 @@ export default function SessionPage() {
     sessionStartTime,
     promotedDifficulty,
     intervalFirstTap,
+    intervalSecondTap,
+    intervalSameStringHint,
+    chordTaps,
     startSession,
     startChallenge,
     noteReady,
     submitAnswer,
+    submitChordAnswer,
+    submitIntervalAnswer,
     nextChallenge,
     setDifficulty,
     clearPromotion,
@@ -38,7 +45,7 @@ export default function SessionPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
 
-  const { showRoot, setShowRoot } = useSettingsStore();
+  const { showRoot, setShowRoot, intervalMix, chordMix } = useSettingsStore();
 
   // Orientation: auto-detect + manual override
   const autoLayout = useOrientation();
@@ -55,8 +62,9 @@ export default function SessionPage() {
   /** Resolve the note(s) to play for the active challenge */
   function getChallengeNotes(c: Challenge): string[] {
     if (c.type === "find-the-note") return [c.targetNote];
-    // Interval: play root then second note in sequence (handled by playSequence)
-    return [c.rootNote, c.secondNote];
+    if (c.type === "find-the-interval") return [c.rootNote, c.secondNote];
+    // Chord: map midi numbers to note names for arpeggio playback
+    return c.midiNotes.map((m) => midiToNote(m));
   }
 
   const playChallenge = useCallback(async () => {
@@ -65,8 +73,13 @@ export default function SessionPage() {
     const notes = getChallengeNotes(challenge);
     if (notes.length === 1) {
       await playNote(notes[0]!, 2);
+    } else if (challenge.type === "find-the-chord") {
+      // Play all chord tones simultaneously as a chord, then arpeggiate
+      const { playSequence } = await import("@/lib/audio/engine");
+      await playChord(notes, 2);
+      await new Promise((r) => setTimeout(r, 900));
+      await playSequence(notes, 250);
     } else {
-      // Import playSequence for interval challenges
       const { playSequence } = await import("@/lib/audio/engine");
       await playSequence(notes, 400);
     }
@@ -103,7 +116,7 @@ export default function SessionPage() {
   }
 
   function handleStart() {
-    startSession({ difficulty, intervalMix: 0.5 });
+    startSession({ difficulty, intervalMix, chordMix });
   }
 
   function handleFretboardSelect(string: number, fret: number) {
@@ -117,6 +130,11 @@ export default function SessionPage() {
     const notes = getChallengeNotes(challenge);
     if (notes.length === 1) {
       await playNote(notes[0]!, 2);
+    } else if (challenge.type === "find-the-chord") {
+      const { playSequence } = await import("@/lib/audio/engine");
+      await playChord(notes, 2);
+      await new Promise((r) => setTimeout(r, 900));
+      await playSequence(notes, 250);
     } else {
       const { playSequence } = await import("@/lib/audio/engine");
       await playSequence(notes, 400);
@@ -131,28 +149,81 @@ export default function SessionPage() {
   }
 
   function handlePlayAgain() {
-    // startSession resets transient state and generates a fresh queue
-    startSession({ difficulty, intervalMix: 0.5 });
+    startSession({ difficulty, intervalMix, chordMix });
   }
 
   // ── Highlights ────────────────────────────────────────────────────────────
 
   const highlights: FretHighlight[] = [];
 
-  if (phase === "awaiting" && challenge?.type === "find-the-interval" && intervalFirstTap) {
-    // Show the locked-in root tap as a neutral hint highlight (two-tap flow)
-    highlights.push({ ...intervalFirstTap, variant: "hint" });
+  if (phase === "awaiting" && challenge?.type === "find-the-interval") {
+    if (intervalFirstTap) {
+      highlights.push({ ...intervalFirstTap, variant: "hint", label: "R" });
+    }
+    if (intervalSecondTap) {
+      const intervalKey = challenge.intervalKey;
+      highlights.push({ ...intervalSecondTap, variant: "hint", label: intervalKey });
+    }
+    // Same-string hint: show all cross-string valid positions for the second note
+    if (intervalSameStringHint && intervalFirstTap) {
+      const crossStringPositions = getValidSecondPositions(
+        intervalFirstTap.string,
+        challenge.secondNote,
+      );
+      for (const pos of crossStringPositions) {
+        highlights.push({ ...pos, variant: "hint", label: challenge.intervalKey });
+      }
+    }
   }
+
+  if (phase === "awaiting" && challenge?.type === "find-the-chord") {
+    // Show all accumulated chord taps as hint dots
+    for (const tap of chordTaps) {
+      highlights.push({ ...tap, variant: "hint" });
+    }
+    // When Show Root is ON, also highlight root positions
+    if (showRoot && !isPlaying) {
+      for (const pos of getAllPositionsForNote(challenge.rootNote)) {
+        const alreadyTapped = chordTaps.some(
+          (t) => t.string === pos.string && t.fret === pos.fret,
+        );
+        if (!alreadyTapped) {
+          highlights.push({ ...pos, variant: "hint", label: "R" });
+        }
+      }
+    }
+  }
+
   if (phase === "feedback" && lastResult) {
     const ir = lastResult.intervalResult;
-    if (ir) {
+    const cr = lastResult.chordResult;
+    if (cr) {
+      // Chord feedback: per-tap correct/incorrect highlights
+      for (const tap of cr.tapResults) {
+        highlights.push({
+          ...tap.position,
+          variant: tap.correct ? "correct" : "incorrect",
+        });
+      }
+      // All chord-tone positions labeled by role (R, 3, #5, etc.)
+      const tappedKeys = new Set(cr.tapResults.map((t) => `${t.position.string}-${t.position.fret}`));
+      for (const [pc, label] of cr.pitchClassLabels) {
+        // Find a representative note name for this pitch class (any octave)
+        const noteName = midiToNote(pc + 48); // e.g. pc=5 → midi 53 → "F3"
+        for (const pos of getAllPositionsForNote(noteName.replace(/\d/, ""))) {
+          const key = `${pos.string}-${pos.fret}`;
+          if (!tappedKeys.has(key)) {
+            highlights.push({ ...pos, variant: "hint", label });
+          }
+        }
+      }
+    } else if (ir) {
       // Interval feedback: per-note highlights
       highlights.push({
         ...ir.rootTap,
         variant: ir.rootCorrect ? "correct" : "incorrect",
         label: "R",
       });
-      // Interval key label for the second note (e.g. "P5", "m3")
       const intervalKey =
         challenge?.type === "find-the-interval" ? challenge.intervalKey : undefined;
       highlights.push({
@@ -160,8 +231,6 @@ export default function SessionPage() {
         variant: ir.secondCorrect ? "correct" : "incorrect",
         label: intervalKey,
       });
-      // Interval key label for hint circles (e.g. "P5", "m3")
-      // Reveal hints for incorrect taps
       if (!ir.rootCorrect) {
         for (const pos of ir.rootValidPositions) {
           if (pos.string !== ir.rootTap.string || pos.fret !== ir.rootTap.fret) {
@@ -177,7 +246,7 @@ export default function SessionPage() {
         }
       }
     } else {
-      // Note feedback: mark tapped position, then reveal ALL neck positions for the target note
+      // Note feedback
       highlights.push({
         ...lastResult.tappedPosition,
         variant: lastResult.correct ? "correct" : "incorrect",
@@ -344,13 +413,18 @@ export default function SessionPage() {
                 ? (challenge as { intervalName: string }).intervalName
                 : undefined
             }
+            chordTapCount={
+              challenge?.type === "find-the-chord" ? chordTaps.length : 0
+            }
             rootNote={
               showRoot && !isPlaying
                 ? challenge?.type === "find-the-interval"
                   ? (challenge as { rootNote: string }).rootNote
                   : challenge?.type === "find-the-note"
                     ? (challenge as { targetNote: string }).targetNote
-                    : undefined
+                    : challenge?.type === "find-the-chord"
+                      ? (challenge as { chordLabel: string }).chordLabel
+                      : undefined
                 : undefined
             }
           />
@@ -363,6 +437,43 @@ export default function SessionPage() {
           />
         )}
       </div>
+
+      {/* Done button — for chord and interval challenges while awaiting */}
+      {phase === "awaiting" && challenge?.type === "find-the-chord" && (
+        <div className="flex justify-center">
+          <button
+            onClick={submitChordAnswer}
+            disabled={chordTaps.length === 0}
+            className={[
+              "px-8 py-3 rounded-full font-semibold text-white text-sm transition-colors",
+              chordTaps.length > 0
+                ? "bg-green-600 hover:bg-green-500 active:bg-green-700"
+                : "bg-zinc-700 opacity-40 cursor-not-allowed",
+            ].join(" ")}
+          >
+            Done ({chordTaps.length} tap{chordTaps.length !== 1 ? "s" : ""})
+          </button>
+        </div>
+      )}
+      {phase === "awaiting" && challenge?.type === "find-the-interval" && intervalSecondTap && (
+        <div className="flex justify-center">
+          <button
+            onClick={submitIntervalAnswer}
+            className="px-8 py-3 rounded-full font-semibold text-white text-sm transition-colors bg-green-600 hover:bg-green-500 active:bg-green-700"
+          >
+            Done
+          </button>
+        </div>
+      )}
+
+      {/* Same-string hint — shown in place of Done when pitch is right but string is wrong */}
+      {phase === "awaiting" && challenge?.type === "find-the-interval" && intervalSameStringHint && (
+        <div className="flex justify-center">
+          <p className="text-sm text-amber-400 text-center px-4">
+            ✓ Correct note — try it on a different string
+          </p>
+        </div>
+      )}
 
       {/* Fretboard */}
       <div className="bg-zinc-800 rounded-xl p-3 flex-1">

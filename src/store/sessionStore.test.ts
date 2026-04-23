@@ -5,7 +5,8 @@ import type { TaggedNoteChallenge, Challenge } from "@/lib/session/sessionGenera
 import type { IntervalChallenge } from "@/lib/challenges/findTheInterval";
 import { getValidSecondPositions } from "@/lib/challenges/findTheInterval";
 import { getAllPositions } from "@/lib/music/fretboard";
-import { fretToMidi } from "@/lib/music/notes";
+import { fretToMidi, GUITAR_MIDI_MIN, GUITAR_MIDI_MAX } from "@/lib/music/notes";
+import type { FindTheChordChallenge } from "@/lib/challenges/findTheChord";
 
 /** Narrow a Challenge to find-the-note (throws in tests if wrong type) */
 function asNote(c: Challenge | null): TaggedNoteChallenge {
@@ -623,6 +624,55 @@ describe("interval challenge in submitAnswer", () => {
     expect(useSessionStore.getState().lastResult).toBeNull();
   });
 
+  it("tapping root again undoes the root tap and clears second tap", () => {
+    useSessionStore.getState().startSession({ length: 1, intervalMix: 1 });
+    const { challenge } = useSessionStore.getState();
+    const rootMidi = (challenge as unknown as IntervalChallenge).rootMidi;
+    const secondNote = (challenge as unknown as IntervalChallenge).secondNote;
+    const rootPos = getAllPositions().find(
+      (p) =>
+        fretToMidi(p.string, p.fret) === rootMidi &&
+        getValidSecondPositions(p.string, secondNote).length > 0
+    )!;
+    const secondPos = getValidSecondPositions(rootPos.string, secondNote)[0] as { string: number; fret: number };
+
+    useSessionStore.getState().noteReady();
+    useSessionStore.getState().submitAnswer(rootPos.string, rootPos.fret);   // tap root
+    useSessionStore.getState().submitAnswer(secondPos.string, secondPos.fret); // tap second
+    expect(useSessionStore.getState().intervalFirstTap).not.toBeNull();
+    expect(useSessionStore.getState().intervalSecondTap).not.toBeNull();
+
+    // Tap root again → undoes both
+    useSessionStore.getState().submitAnswer(rootPos.string, rootPos.fret);
+    expect(useSessionStore.getState().intervalFirstTap).toBeNull();
+    expect(useSessionStore.getState().intervalSecondTap).toBeNull();
+    expect(useSessionStore.getState().phase).toBe("awaiting");
+  });
+
+  it("tapping second note again undoes only the second tap", () => {
+    useSessionStore.getState().startSession({ length: 1, intervalMix: 1 });
+    const { challenge } = useSessionStore.getState();
+    const rootMidi = (challenge as unknown as IntervalChallenge).rootMidi;
+    const secondNote = (challenge as unknown as IntervalChallenge).secondNote;
+    const rootPos = getAllPositions().find(
+      (p) =>
+        fretToMidi(p.string, p.fret) === rootMidi &&
+        getValidSecondPositions(p.string, secondNote).length > 0
+    )!;
+    const secondPos = getValidSecondPositions(rootPos.string, secondNote)[0] as { string: number; fret: number };
+
+    useSessionStore.getState().noteReady();
+    useSessionStore.getState().submitAnswer(rootPos.string, rootPos.fret);   // tap root
+    useSessionStore.getState().submitAnswer(secondPos.string, secondPos.fret); // tap second
+    expect(useSessionStore.getState().intervalSecondTap).not.toBeNull();
+
+    // Tap second again → undoes only second
+    useSessionStore.getState().submitAnswer(secondPos.string, secondPos.fret);
+    expect(useSessionStore.getState().intervalFirstTap).toEqual({ string: rootPos.string, fret: rootPos.fret });
+    expect(useSessionStore.getState().intervalSecondTap).toBeNull();
+    expect(useSessionStore.getState().phase).toBe("awaiting");
+  });
+
   it("second tap completes the challenge and sets lastResult with intervalResult", () => {
     useSessionStore.getState().startSession({ length: 1, intervalMix: 1 });
     const { challenge } = useSessionStore.getState();
@@ -645,8 +695,13 @@ describe("interval challenge in submitAnswer", () => {
     useSessionStore.getState().submitAnswer(rootPos!.string, rootPos!.fret);
     expect(useSessionStore.getState().phase).toBe("awaiting");
 
-    // Second tap (any cross-string position)
+    // Second tap (any cross-string position) — stores tap, does not auto-evaluate
     useSessionStore.getState().submitAnswer(secondPos.string, secondPos.fret);
+    expect(useSessionStore.getState().phase).toBe("awaiting");
+    expect(useSessionStore.getState().intervalSecondTap).toEqual({ string: secondPos.string, fret: secondPos.fret });
+
+    // Explicitly submit to evaluate
+    useSessionStore.getState().submitIntervalAnswer();
     expect(useSessionStore.getState().phase).toBe("feedback");
 
     const result = useSessionStore.getState().lastResult;
@@ -656,6 +711,7 @@ describe("interval challenge in submitAnswer", () => {
     expect(result!.intervalResult!.secondTap).toEqual({ string: secondPos.string, fret: secondPos.fret });
     expect(typeof result!.intervalResult!.intervalName).toBe("string");
     expect(useSessionStore.getState().intervalFirstTap).toBeNull();
+    expect(useSessionStore.getState().intervalSecondTap).toBeNull();
   });
 
   it("scores correctly when both taps are on the correct pitches", () => {
@@ -684,9 +740,193 @@ describe("interval challenge in submitAnswer", () => {
     useSessionStore.getState().noteReady();
     useSessionStore.getState().submitAnswer(rootPos!.string, rootPos!.fret);    // first tap
     useSessionStore.getState().submitAnswer(secondPos!.string, secondPos!.fret); // second tap
+    useSessionStore.getState().submitIntervalAnswer();                           // evaluate
 
     expect(useSessionStore.getState().lastResult!.correct).toBe(true);
     expect(useSessionStore.getState().score.correct).toBe(1);
   });
+
+  it("same-string correct pitch sets intervalSameStringHint and does not store as second tap", () => {
+    useSessionStore.getState().startSession({ length: 1, intervalMix: 1 });
+    const { challenge } = useSessionStore.getState();
+    const rootMidi = (challenge as unknown as IntervalChallenge).rootMidi;
+    const secondMidi = (challenge as unknown as IntervalChallenge).secondMidi;
+    const secondNote = (challenge as unknown as IntervalChallenge).secondNote;
+
+    // Find a root position
+    const rootPos = getAllPositions().find(
+      (p) =>
+        fretToMidi(p.string, p.fret) === rootMidi &&
+        getValidSecondPositions(p.string, secondNote).length > 0
+    )!;
+
+    // Find a same-string position with the correct second pitch
+    const sameStringSecond = getAllPositions().find(
+      (p) => p.string === rootPos.string && fretToMidi(p.string, p.fret) === secondMidi
+    );
+    if (!sameStringSecond) return; // skip if this combo doesn't exist for this challenge
+
+    useSessionStore.getState().noteReady();
+    useSessionStore.getState().submitAnswer(rootPos.string, rootPos.fret); // root tap
+    useSessionStore.getState().submitAnswer(sameStringSecond.string, sameStringSecond.fret); // same-string second
+
+    expect(useSessionStore.getState().intervalSameStringHint).toBe(true);
+    expect(useSessionStore.getState().intervalSecondTap).toBeNull();
+    expect(useSessionStore.getState().phase).toBe("awaiting");
+  });
+
+  it("a cross-string tap after same-string hint clears the hint and stores as second tap", () => {
+    useSessionStore.getState().startSession({ length: 1, intervalMix: 1 });
+    const { challenge } = useSessionStore.getState();
+    const rootMidi = (challenge as unknown as IntervalChallenge).rootMidi;
+    const secondMidi = (challenge as unknown as IntervalChallenge).secondMidi;
+    const secondNote = (challenge as unknown as IntervalChallenge).secondNote;
+
+    const rootPos = getAllPositions().find(
+      (p) =>
+        fretToMidi(p.string, p.fret) === rootMidi &&
+        getValidSecondPositions(p.string, secondNote).length > 0
+    )!;
+
+    const sameStringSecond = getAllPositions().find(
+      (p) => p.string === rootPos.string && fretToMidi(p.string, p.fret) === secondMidi
+    );
+    if (!sameStringSecond) return;
+
+    const crossStringSecond = getValidSecondPositions(rootPos.string, secondNote)[0]!;
+
+    useSessionStore.getState().noteReady();
+    useSessionStore.getState().submitAnswer(rootPos.string, rootPos.fret);
+    useSessionStore.getState().submitAnswer(sameStringSecond.string, sameStringSecond.fret); // triggers hint
+    expect(useSessionStore.getState().intervalSameStringHint).toBe(true);
+
+    useSessionStore.getState().submitAnswer(crossStringSecond.string, crossStringSecond.fret); // valid tap
+    expect(useSessionStore.getState().intervalSameStringHint).toBe(false);
+    expect(useSessionStore.getState().intervalSecondTap).toEqual({ string: crossStringSecond.string, fret: crossStringSecond.fret });
+  });
 });
 
+// ─── M6: chord challenge flow ──────────────────────────────────────────────────
+
+describe("chord challenge in submitAnswer / submitChordAnswer", () => {
+  function setupChordChallenge() {
+    useSessionStore.getState().startSession({ length: 1, chordMix: 1 });
+    const { challenge } = useSessionStore.getState();
+    expect(challenge?.type).toBe("find-the-chord");
+    useSessionStore.getState().noteReady();
+    return challenge!;
+  }
+
+  it("starts with empty chordTaps", () => {
+    setupChordChallenge();
+    expect(useSessionStore.getState().chordTaps).toHaveLength(0);
+  });
+
+  it("each submitAnswer tap accumulates in chordTaps and stays in awaiting", () => {
+    setupChordChallenge();
+    useSessionStore.getState().submitAnswer(1, 0);
+    expect(useSessionStore.getState().phase).toBe("awaiting");
+    expect(useSessionStore.getState().chordTaps).toHaveLength(1);
+    useSessionStore.getState().submitAnswer(2, 0);
+    expect(useSessionStore.getState().phase).toBe("awaiting");
+    expect(useSessionStore.getState().chordTaps).toHaveLength(2);
+  });
+
+  it("submitAnswer does NOT set lastResult", () => {
+    setupChordChallenge();
+    useSessionStore.getState().submitAnswer(1, 0);
+    expect(useSessionStore.getState().lastResult).toBeNull();
+  });
+
+  it("submitChordAnswer transitions to feedback", () => {
+    setupChordChallenge();
+    useSessionStore.getState().submitAnswer(1, 0);
+    useSessionStore.getState().submitChordAnswer();
+    expect(useSessionStore.getState().phase).toBe("feedback");
+  });
+
+  it("submitChordAnswer sets lastResult with chordResult", () => {
+    setupChordChallenge();
+    useSessionStore.getState().submitAnswer(1, 0);
+    useSessionStore.getState().submitChordAnswer();
+    const result = useSessionStore.getState().lastResult;
+    expect(result).not.toBeNull();
+    expect(result!.chordResult).toBeDefined();
+  });
+
+  it("submitChordAnswer clears chordTaps after evaluation", () => {
+    setupChordChallenge();
+    useSessionStore.getState().submitAnswer(1, 0);
+    useSessionStore.getState().submitChordAnswer();
+    expect(useSessionStore.getState().chordTaps).toHaveLength(0);
+  });
+
+  it("submitChordAnswer is a no-op if challenge is not find-the-chord", () => {
+    useSessionStore.getState().startSession({ length: 1, chordMix: 0 });
+    useSessionStore.getState().noteReady();
+    useSessionStore.getState().submitChordAnswer();
+    expect(useSessionStore.getState().phase).toBe("awaiting");
+  });
+
+  it("submitChordAnswer with correct taps scores a point", () => {
+    const challenge = setupChordChallenge();
+    const ch = challenge as FindTheChordChallenge;
+    const allPos = getAllPositions();
+
+    // Find one fretboard position for each required pitch class
+    const taps: { string: number; fret: number }[] = [];
+    for (const pc of ch.pitchClasses) {
+      const pos = allPos.find((p) => {
+        const m = fretToMidi(p.string, p.fret);
+        return m % 12 === pc && m >= GUITAR_MIDI_MIN && m <= GUITAR_MIDI_MAX;
+      });
+      if (pos) taps.push(pos);
+    }
+
+    expect(taps.length).toBe(ch.pitchClasses.size);
+
+    for (const tap of taps) {
+      useSessionStore.getState().submitAnswer(tap.string, tap.fret);
+    }
+    useSessionStore.getState().submitChordAnswer();
+
+    expect(useSessionStore.getState().lastResult!.correct).toBe(true);
+    expect(useSessionStore.getState().score.correct).toBe(1);
+  });
+
+  it("chordTaps cleared on reset()", () => {
+    setupChordChallenge();
+    useSessionStore.getState().submitAnswer(1, 0);
+    useSessionStore.getState().reset();
+    expect(useSessionStore.getState().chordTaps).toHaveLength(0);
+  });
+
+  it("chordTaps cleared on startSession()", () => {
+    setupChordChallenge();
+    useSessionStore.getState().submitAnswer(1, 0);
+    useSessionStore.getState().startSession({ length: 1 });
+    expect(useSessionStore.getState().chordTaps).toHaveLength(0);
+  });
+
+  it("tapping a chord position again removes it from chordTaps", () => {
+    setupChordChallenge();
+    useSessionStore.getState().submitAnswer(1, 3);
+    useSessionStore.getState().submitAnswer(2, 5);
+    expect(useSessionStore.getState().chordTaps).toHaveLength(2);
+
+    // Tap (1, 3) again → removes it
+    useSessionStore.getState().submitAnswer(1, 3);
+    expect(useSessionStore.getState().chordTaps).toHaveLength(1);
+    expect(useSessionStore.getState().chordTaps[0]).toEqual({ string: 2, fret: 5 });
+    expect(useSessionStore.getState().phase).toBe("awaiting");
+  });
+
+  it("re-adding a removed chord tap works normally", () => {
+    setupChordChallenge();
+    useSessionStore.getState().submitAnswer(1, 3);
+    useSessionStore.getState().submitAnswer(1, 3); // remove
+    expect(useSessionStore.getState().chordTaps).toHaveLength(0);
+    useSessionStore.getState().submitAnswer(1, 3); // re-add
+    expect(useSessionStore.getState().chordTaps).toHaveLength(1);
+  });
+});

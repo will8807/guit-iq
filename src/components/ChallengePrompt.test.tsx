@@ -113,4 +113,62 @@ describe("ChallengePrompt", () => {
     );
     expect(screen.getByText("Find the Perfect 5th")).toBeDefined();
   });
+
+  // ── Chord challenge ────────────────────────────────────────────────────────
+
+  it("shows 'Tap all chord tones' prompt for chord challenges", () => {
+    render(<ChallengePrompt isPlaying={false} onReplay={vi.fn()} challengeType="find-the-chord" />);
+    expect(screen.getByText("Tap all chord tones")).toBeDefined();
+  });
+
+  it("does not show tap counter when chordTapCount is 0", () => {
+    render(
+      <ChallengePrompt isPlaying={false} onReplay={vi.fn()} challengeType="find-the-chord" chordTapCount={0} />
+    );
+    expect(screen.queryByText(/tapped/)).toBeNull();
+  });
+
+  it("shows tap counter badge when chordTapCount > 0", () => {
+    render(
+      <ChallengePrompt isPlaying={false} onReplay={vi.fn()} challengeType="find-the-chord" chordTapCount={3} />
+    );
+    expect(screen.getByText("3 tapped")).toBeDefined();
+  });
+
+  it("does not show tap counter while audio is playing", () => {
+    render(
+      <ChallengePrompt isPlaying={true} onReplay={vi.fn()} challengeType="find-the-chord" chordTapCount={2} />
+    );
+    expect(screen.queryByText(/tapped/)).toBeNull();
+  });
+
+  it("shows 'Chord' label when Show Root ON for chord challenge", () => {
+    render(
+      <ChallengePrompt
+        isPlaying={false}
+        onReplay={vi.fn()}
+        challengeType="find-the-chord"
+        rootNote="C Major"
+      />
+    );
+    expect(screen.getByText("Chord")).toBeDefined();
+    expect(screen.getByText("C Major")).toBeDefined();
+  });
+
+  it("does not show step indicator for chord challenges", () => {
+    render(<ChallengePrompt isPlaying={false} onReplay={vi.fn()} challengeType="find-the-chord" />);
+    expect(screen.queryByText(/\/2/)).toBeNull();
+  });
+
+  it("hides chord name badge while audio is playing even if rootNote is set", () => {
+    render(
+      <ChallengePrompt
+        isPlaying={true}
+        onReplay={vi.fn()}
+        challengeType="find-the-chord"
+        rootNote="G Minor"
+      />
+    );
+    expect(screen.queryByText("G Minor")).toBeNull();
+  });
 });

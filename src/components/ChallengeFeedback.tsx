@@ -5,8 +5,8 @@
  *
  * Shown during "feedback" phase.
  * Reveals whether the answer was correct.
- * For interval challenges, also shows per-note breakdown and the interval name
- * as educational reinforcement.
+ * For interval challenges, also shows per-note breakdown and the interval name.
+ * For chord challenges, shows per-tap breakdown and the chord name.
  */
 
 import type { EvaluationResult } from "@/lib/challenges/findTheNote";
@@ -23,6 +23,7 @@ export default function ChallengeFeedback({
   onNext,
 }: ChallengeFeedbackProps) {
   const ir = result.intervalResult;
+  const cr = result.chordResult;
 
   return (
     <div className="flex flex-col gap-2 py-2">
@@ -86,6 +87,55 @@ export default function ChallengeFeedback({
               Interval {ir.secondCorrect ? "✓" : "✗"}
             </span>
           </div>
+        </div>
+      )}
+
+      {/* Same-string hint — shown only when the pitch was right but same string */}
+      {ir?.secondSameString && (
+        <p className="text-xs text-amber-400 px-1">
+          ✓ Correct note — try it on a different string
+        </p>
+      )}
+
+      {/* Chord educational context */}
+      {cr && (
+        <div className="flex flex-col gap-1.5 px-1">
+          <div className="flex items-center gap-3">
+            <p className="text-xs text-zinc-400">
+              That was a{" "}
+              <span className="text-indigo-300 font-semibold">{cr.chordLabel}</span>
+            </p>
+            {/* Missed note count pill */}
+            {cr.missedPitchClasses.size > 0 && (
+              <span className="ml-auto text-xs px-2 py-0.5 rounded-full font-medium bg-amber-900/60 text-amber-300">
+                {cr.missedPitchClasses.size} missed
+              </span>
+            )}
+          </div>
+
+          {/* Per-tap result pills (max 6 shown) */}
+          {cr.tapResults.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {cr.tapResults.slice(0, 6).map((tap, i) => (
+                <span
+                  key={i}
+                  className={[
+                    "text-xs px-2 py-0.5 rounded-full font-medium",
+                    tap.correct
+                      ? "bg-green-800/60 text-green-300"
+                      : "bg-red-900/60 text-red-300",
+                  ].join(" ")}
+                >
+                  Tap {i + 1} {tap.correct ? "✓" : "✗"}
+                </span>
+              ))}
+              {cr.tapResults.length > 6 && (
+                <span className="text-xs text-zinc-500 px-1 py-0.5">
+                  +{cr.tapResults.length - 6} more
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

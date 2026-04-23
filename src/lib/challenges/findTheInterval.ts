@@ -115,7 +115,9 @@ export function evaluateTwoTapInterval(
 
   const rootCorrect = rootMidi === challenge.rootMidi
   // The second note must match pitch AND be on a different string (real guitar constraint)
-  const secondCorrect = secondMidi === challenge.secondMidi && secondTap.string !== rootTap.string
+  const secondPitchCorrect = secondMidi === challenge.secondMidi
+  const secondSameString = secondPitchCorrect && secondTap.string === rootTap.string
+  const secondCorrect = secondPitchCorrect && !secondSameString
 
   const rootNote = midiToNote(challenge.rootMidi)
   const secondNote = midiToNote(challenge.secondMidi)
@@ -131,11 +133,11 @@ export function evaluateTwoTapInterval(
     secondCorrect,
     secondValidPositions: validSecondPositions,
     intervalName: challenge.intervalName,
+    secondSameString,
   }
 
   return {
     correct: rootCorrect && secondCorrect,
-    // tappedPosition / validPositions refer to the second note (for legacy compat)
     tappedPosition: secondTap,
     validPositions: validSecondPositions,
     targetNote: secondNote,

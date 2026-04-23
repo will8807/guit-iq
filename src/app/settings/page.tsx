@@ -6,9 +6,22 @@ import { useProgressStore } from "@/store/progressStore";
 
 const SESSION_LENGTHS = [4, 6, 8, 10, 12] as const;
 
+/** Rounds a 0–1 fraction to the nearest 25% step */
+function toPercent(v: number) {
+  return Math.round(v * 100);
+}
+
 export default function SettingsPage() {
-  const { showRoot, setShowRoot, sessionLength, setSessionLength } =
-    useSettingsStore();
+  const {
+    showRoot,
+    setShowRoot,
+    sessionLength,
+    setSessionLength,
+    intervalMix,
+    setIntervalMix,
+    chordMix,
+    setChordMix,
+  } = useSettingsStore();
   const { clearProgress, totalSessions } = useProgressStore();
 
   function handleClearProgress() {
@@ -16,6 +29,8 @@ export default function SettingsPage() {
       clearProgress();
     }
   }
+
+  const MIX_STEPS = [0, 0.25, 0.5, 0.75, 1] as const;
 
   return (
     <main className="min-h-screen bg-zinc-900 text-white flex flex-col items-center gap-8 p-6 pt-10">
@@ -79,6 +94,78 @@ export default function SettingsPage() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Challenge Mix */}
+      <section className="w-full max-w-sm bg-zinc-800 rounded-xl p-5 flex flex-col gap-5">
+        <p className="text-xs text-zinc-400 uppercase tracking-wide">Challenge Mix</p>
+
+        {/* Interval Mix */}
+        <div className="flex flex-col gap-2">
+          <div className="flex justify-between">
+            <p className="font-medium text-sm">Interval challenges</p>
+            <p className="text-sm text-indigo-300 font-semibold">{toPercent(intervalMix)}%</p>
+          </div>
+          <p className="text-xs text-zinc-400">
+            Hear an interval — tap both notes. 0% = none, 100% = all.
+          </p>
+          <div className="flex gap-2" role="group" aria-label="Interval challenge fraction">
+            {MIX_STEPS.map((v) => (
+              <button
+                key={v}
+                onClick={() => {
+                  // Clamp so intervalMix + chordMix ≤ 1
+                  const clamped = Math.min(v, 1 - chordMix);
+                  setIntervalMix(clamped);
+                }}
+                aria-pressed={intervalMix === v}
+                className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
+                  intervalMix === v
+                    ? "bg-indigo-600 text-white"
+                    : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+                }`}
+              >
+                {toPercent(v)}%
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Chord Mix */}
+        <div className="flex flex-col gap-2">
+          <div className="flex justify-between">
+            <p className="font-medium text-sm">Chord challenges</p>
+            <p className="text-sm text-amber-300 font-semibold">{toPercent(chordMix)}%</p>
+          </div>
+          <p className="text-xs text-zinc-400">
+            Hear a chord — tap all chord tones. 0% = none, 100% = all.
+          </p>
+          <div className="flex gap-2" role="group" aria-label="Chord challenge fraction">
+            {MIX_STEPS.map((v) => (
+              <button
+                key={v}
+                onClick={() => {
+                  const clamped = Math.min(v, 1 - intervalMix);
+                  setChordMix(clamped);
+                }}
+                aria-pressed={chordMix === v}
+                className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
+                  chordMix === v
+                    ? "bg-amber-600 text-white"
+                    : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+                }`}
+              >
+                {toPercent(v)}%
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Summary */}
+        <p className="text-xs text-zinc-500 text-center">
+          {toPercent(Math.max(0, 1 - intervalMix - chordMix))}% note challenges ·{" "}
+          {toPercent(intervalMix)}% interval · {toPercent(chordMix)}% chord
+        </p>
       </section>
 
       {/* Data */}

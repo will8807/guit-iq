@@ -24,6 +24,10 @@ import {
   generateIntervalChallenge,
   type IntervalChallenge,
 } from "@/lib/challenges/findTheInterval";
+import {
+  generateChordChallenge,
+  type FindTheChordChallenge,
+} from "@/lib/challenges/findTheChord";
 
 // ─── Discriminated union ──────────────────────────────────────────────────────
 
@@ -33,8 +37,11 @@ export type TaggedNoteChallenge = FindTheNoteChallenge & { type: "find-the-note"
 /** Find-the-Interval challenge with an explicit type discriminant */
 export type TaggedIntervalChallenge = IntervalChallenge & { type: "find-the-interval" };
 
+/** Find-the-Chord challenge with an explicit type discriminant */
+export type TaggedChordChallenge = FindTheChordChallenge & { type: "find-the-chord" };
+
 /** Union of all challenge types the session can contain */
-export type Challenge = TaggedNoteChallenge | TaggedIntervalChallenge;
+export type Challenge = TaggedNoteChallenge | TaggedIntervalChallenge | TaggedChordChallenge;
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -51,6 +58,12 @@ export interface SessionConfig {
    * The actual count is rounded to the nearest integer.
    */
   intervalMix?: number;
+  /**
+   * Fraction of challenges that should be chord challenges, 0–1 (default: 0).
+   * Combined with intervalMix — total of intervalMix + chordMix must be <= 1.
+   * The remainder fills with "Find the Note" challenges.
+   */
+  chordMix?: number;
   /**
    * Per-note adaptive stats passed through to the weighted note generator.
    * Leave empty for uniform random selection.
@@ -71,15 +84,21 @@ export function generateSession(config: SessionConfig = {}): Challenge[] {
     length = 8,
     difficulty = "easy",
     intervalMix = 0,
+    chordMix = 0,
     noteStats = {},
   } = config;
 
   if (length < 1) throw new Error("Session length must be >= 1");
   if (intervalMix < 0 || intervalMix > 1)
     throw new Error("intervalMix must be between 0 and 1");
+  if (chordMix < 0 || chordMix > 1)
+    throw new Error("chordMix must be between 0 and 1");
+  if (intervalMix + chordMix > 1)
+    throw new Error("intervalMix + chordMix must not exceed 1");
 
   const intervalCount = Math.round(length * intervalMix);
-  const noteCount = length - intervalCount;
+  const chordCount = Math.round(length * chordMix);
+  const noteCount = length - intervalCount - chordCount;
 
   const challenges: Challenge[] = [];
 
@@ -93,6 +112,11 @@ export function generateSession(config: SessionConfig = {}): Challenge[] {
     challenges.push({ ...base, type: "find-the-interval" });
   }
 
+  for (let i = 0; i < chordCount; i++) {
+    const base = generateChordChallenge(difficulty);
+    challenges.push({ ...base, type: "find-the-chord" });
+  }
+
   // Fisher-Yates shuffle so the types are interleaved, not blocked
   for (let i = challenges.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -103,7 +127,9 @@ export function generateSession(config: SessionConfig = {}): Challenge[] {
   // Prevent consecutive duplicates — redraw any challenge whose target key
   // matches the immediately preceding challenge (same note or same interval).
   function challengeKey(c: Challenge): string {
-    return c.type === "find-the-note" ? c.targetNote : c.intervalKey;
+    if (c.type === "find-the-note") return c.targetNote;
+    if (c.type === "find-the-interval") return c.intervalKey;
+    return c.chordKey;
   }
 
   const MAX_RETRIES = 10;
@@ -116,9 +142,12 @@ export function generateSession(config: SessionConfig = {}): Challenge[] {
       if (challenges[i]!.type === "find-the-note") {
         const base = generateWeightedChallenge(difficulty, noteStats);
         challenges[i] = { ...base, type: "find-the-note" };
-      } else {
+      } else if (challenges[i]!.type === "find-the-interval") {
         const base = generateIntervalChallenge(difficulty);
         challenges[i] = { ...base, type: "find-the-interval" };
+      } else {
+        const base = generateChordChallenge(difficulty);
+        challenges[i] = { ...base, type: "find-the-chord" };
       }
       retries++;
     }

@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ChallengeFeedback from "./ChallengeFeedback";
 import type { EvaluationResult } from "@/lib/challenges/findTheNote";
+import type { ChordEvaluationResult } from "@/lib/challenges/findTheChord";
 
 const correctResult: EvaluationResult = {
   correct: true,
@@ -120,5 +121,108 @@ describe("ChallengeFeedback", () => {
     render(<ChallengeFeedback result={makeIntervalResult(false, false)} score={score} onNext={vi.fn()} />);
     expect(screen.getByText("Root ✗")).toBeDefined();
     expect(screen.getByText("Interval ✗")).toBeDefined();
+  });
+
+  it("shows same-string hint when secondSameString is true", () => {
+    const result = makeIntervalResult(true, false);
+    result.intervalResult!.secondSameString = true;
+    render(<ChallengeFeedback result={result} score={score} onNext={vi.fn()} />);
+    expect(screen.getByText(/Correct note.*different string/)).toBeDefined();
+  });
+
+  it("does not show same-string hint when secondSameString is false", () => {
+    render(<ChallengeFeedback result={makeIntervalResult(true, false)} score={score} onNext={vi.fn()} />);
+    expect(screen.queryByText(/different string/)).toBeNull();
+  });
+
+  // ── Chord feedback ────────────────────────────────────────────────────────
+
+  function makeChordResult(
+    tapCorrectness: boolean[],
+    missedCount = 0,
+  ): EvaluationResult {
+    const tapResults: ChordEvaluationResult["tapResults"] = tapCorrectness.map(
+      (correct, i) => ({
+        correct,
+        pitchClass: i,
+        position: { string: i + 1, fret: 0 },
+      })
+    );
+    const missedPitchClasses = new Set(
+      Array.from({ length: missedCount }, (_, i) => i + 10)
+    );
+    const chordResult: ChordEvaluationResult = {
+      correct: tapCorrectness.every(Boolean) && missedCount === 0,
+      tapResults,
+      missedPitchClasses,
+      rootPositions: [],
+      chordLabel: "C Major",
+    };
+    return {
+      correct: chordResult.correct,
+      tappedPosition: { string: 1, fret: 0 },
+      validPositions: [],
+      targetNote: "C Major",
+      chordResult,
+    };
+  }
+
+  it("shows chord label when chordResult is present", () => {
+    render(<ChallengeFeedback result={makeChordResult([true, true, true])} score={score} onNext={vi.fn()} />);
+    expect(screen.getByText("C Major")).toBeDefined();
+  });
+
+  it("shows 'That was a' educational line for chord challenges", () => {
+    render(<ChallengeFeedback result={makeChordResult([true])} score={score} onNext={vi.fn()} />);
+    expect(screen.getByText(/That was a/)).toBeDefined();
+  });
+
+  it("does not show chord context for note-only challenges", () => {
+    render(<ChallengeFeedback result={correctResult} score={score} onNext={vi.fn()} />);
+    expect(screen.queryByText(/That was a/)).toBeNull();
+  });
+
+  it("shows per-tap result pills", () => {
+    render(
+      <ChallengeFeedback result={makeChordResult([true, false, true])} score={score} onNext={vi.fn()} />
+    );
+    expect(screen.getByText("Tap 1 ✓")).toBeDefined();
+    expect(screen.getByText("Tap 2 ✗")).toBeDefined();
+    expect(screen.getByText("Tap 3 ✓")).toBeDefined();
+  });
+
+  it("shows 'N missed' pill when pitch classes were missed", () => {
+    render(
+      <ChallengeFeedback result={makeChordResult([true], 2)} score={score} onNext={vi.fn()} />
+    );
+    expect(screen.getByText("2 missed")).toBeDefined();
+  });
+
+  it("does not show missed pill when no pitch classes were missed", () => {
+    render(
+      <ChallengeFeedback result={makeChordResult([true, true, true], 0)} score={score} onNext={vi.fn()} />
+    );
+    expect(screen.queryByText(/missed/)).toBeNull();
+  });
+
+  it("caps per-tap pills at 6 and shows overflow count", () => {
+    const taps = Array(8).fill(true);
+    render(<ChallengeFeedback result={makeChordResult(taps)} score={score} onNext={vi.fn()} />);
+    // Should show Tap 1–6 and "+2 more"
+    expect(screen.getByText("Tap 6 ✓")).toBeDefined();
+    expect(screen.queryByText("Tap 7 ✓")).toBeNull();
+    expect(screen.getByText("+2 more")).toBeDefined();
+  });
+
+  it("correct chord result shows green banner", () => {
+    render(<ChallengeFeedback result={makeChordResult([true, true, true], 0)} score={score} onNext={vi.fn()} />);
+    const banner = screen.getByText("Correct!").closest("div")!;
+    expect(banner.className).toContain("green");
+  });
+
+  it("incorrect chord result shows red banner", () => {
+    render(<ChallengeFeedback result={makeChordResult([false, true])} score={score} onNext={vi.fn()} />);
+    const banner = screen.getByText("Not quite").closest("div")!;
+    expect(banner.className).toContain("red");
   });
 });

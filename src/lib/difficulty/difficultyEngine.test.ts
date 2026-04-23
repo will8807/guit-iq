@@ -96,6 +96,16 @@ describe("calculateDifficulty", () => {
     const intervals = makeHistory(10, 1.0, "find-the-interval");
     expect(calculateDifficulty([...notes, ...intervals], "easy")).toBe("medium");
   });
+
+  it("promotes based on chord history (find-the-chord type)", () => {
+    const chords = makeHistory(20, 0.9, "find-the-chord");
+    expect(calculateDifficulty(chords, "easy")).toBe("medium");
+  });
+
+  it("demotes based on chord history (find-the-chord type)", () => {
+    const chords = makeHistory(20, 0.3, "find-the-chord");
+    expect(calculateDifficulty(chords, "hard")).toBe("medium");
+  });
 });
 
 // ─── calculateAccuracy ───────────────────────────────────────────────────────
@@ -124,6 +134,14 @@ describe("calculateAccuracy", () => {
     const history = [...notes, ...intervals];
     expect(calculateAccuracy(history, "find-the-note")).toBe(1.0);
     expect(calculateAccuracy(history, "find-the-interval")).toBe(0);
+  });
+
+  it("filters find-the-chord separately from other types", () => {
+    const notes = makeHistory(10, 1.0, "find-the-note");
+    const chords = makeHistory(10, 0.4, "find-the-chord");
+    const history = [...notes, ...chords];
+    expect(calculateAccuracy(history, "find-the-chord")).toBeCloseTo(0.4);
+    expect(calculateAccuracy(history, "find-the-note")).toBe(1.0);
   });
 
   it("returns overall accuracy when no type filter given", () => {

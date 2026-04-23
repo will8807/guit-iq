@@ -46,6 +46,11 @@ export interface EvaluationResult {
    * and the interval name for educational post-answer display.
    */
   intervalResult?: IntervalTapResult;
+  /**
+   * Present only for chord challenges — provides per-tap breakdown,
+   * missed pitch classes, and the chord label.
+   */
+  chordResult?: import("@/lib/challenges/findTheChord").ChordEvaluationResult;
 }
 
 /**
@@ -60,6 +65,12 @@ export interface IntervalTapResult {
   secondValidPositions: FretPosition[];
   /** Human-readable interval name, e.g. "Perfect 5th" */
   intervalName: string;
+  /**
+   * True when the second tap has the correct pitch but is on the same string
+   * as the root tap. The answer is still wrong (cross-string required), but the
+   * UI can show a specific hint: "Correct note — try a different string".
+   */
+  secondSameString?: boolean;
 }
 
 /**

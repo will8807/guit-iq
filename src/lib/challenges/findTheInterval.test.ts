@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { generateIntervalChallenge, evaluateIntervalAnswer, evaluateTwoTapInterval } from "./findTheInterval"
+import { generateIntervalChallenge, evaluateIntervalAnswer, evaluateTwoTapInterval, getValidSecondPositions } from "./findTheInterval"
 import { getAllPositions } from "@/lib/music/fretboard"
 import { fretToMidi } from "@/lib/music/notes"
 
@@ -21,20 +21,20 @@ describe("findTheInterval", () => {
 })
 
 describe("evaluateTwoTapInterval", () => {
-  it("returns correct=true when both taps match", () => {
+  it("returns correct=true when both taps match on different strings", () => {
     const challenge = generateIntervalChallenge("easy", () => 0.3)
     const positions = getAllPositions()
 
-    const rootMatch = positions.find(p => fretToMidi(p.string, p.fret) === challenge.rootMidi)
-    const secondMatch = positions.find(p => fretToMidi(p.string, p.fret) === challenge.secondMidi)
-    expect(rootMatch).toBeTruthy()
+    const rootMatch = positions.find(p => fretToMidi(p.string, p.fret) === challenge.rootMidi)!
+    // Find a cross-string second position
+    const secondMatch = getValidSecondPositions(rootMatch.string, challenge.secondNote)[0]!
     expect(secondMatch).toBeTruthy()
-    if (!rootMatch || !secondMatch) return
 
     const result = evaluateTwoTapInterval(challenge, rootMatch, secondMatch)
     expect(result.correct).toBe(true)
     expect(result.intervalResult?.rootCorrect).toBe(true)
     expect(result.intervalResult?.secondCorrect).toBe(true)
+    expect(result.intervalResult?.secondSameString).toBe(false)
     expect(result.intervalResult?.intervalName).toBe(challenge.intervalName)
   })
 
@@ -82,10 +82,38 @@ describe("evaluateTwoTapInterval", () => {
     const positions = getAllPositions()
 
     const rootMatch = positions.find(p => fretToMidi(p.string, p.fret) === challenge.rootMidi)!
-    const secondMatch = positions.find(p => fretToMidi(p.string, p.fret) === challenge.secondMidi)!
+    const secondMatch = getValidSecondPositions(rootMatch.string, challenge.secondNote)[0]!
 
     const result = evaluateTwoTapInterval(challenge, rootMatch, secondMatch)
     expect(result.intervalResult?.rootValidPositions.length).toBeGreaterThan(0)
     expect(result.intervalResult?.secondValidPositions.length).toBeGreaterThan(0)
+  })
+
+  it("sets secondSameString=true and secondCorrect=false when correct pitch on same string", () => {
+    const challenge = generateIntervalChallenge("easy", () => 0.3)
+    const positions = getAllPositions()
+
+    const rootMatch = positions.find(p => fretToMidi(p.string, p.fret) === challenge.rootMidi)!
+    // Find a same-string position with the correct second pitch
+    const sameStringSecond = positions.find(
+      p => p.string === rootMatch.string && fretToMidi(p.string, p.fret) === challenge.secondMidi
+    )
+    if (!sameStringSecond) return // skip if this combo doesn't exist for this challenge
+
+    const result = evaluateTwoTapInterval(challenge, rootMatch, sameStringSecond)
+    expect(result.correct).toBe(false)
+    expect(result.intervalResult?.secondCorrect).toBe(false)
+    expect(result.intervalResult?.secondSameString).toBe(true)
+  })
+
+  it("sets secondSameString=false when pitch is wrong (not a same-string confusion)", () => {
+    const challenge = generateIntervalChallenge("easy", () => 0.3)
+    const positions = getAllPositions()
+
+    const rootMatch = positions.find(p => fretToMidi(p.string, p.fret) === challenge.rootMidi)!
+    const wrongSecond = positions.find(p => fretToMidi(p.string, p.fret) !== challenge.secondMidi)!
+
+    const result = evaluateTwoTapInterval(challenge, rootMatch, wrongSecond)
+    expect(result.intervalResult?.secondSameString).toBe(false)
   })
 })
