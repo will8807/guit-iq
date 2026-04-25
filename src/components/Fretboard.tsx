@@ -68,25 +68,95 @@ const LABEL_CLASSES: Record<HighlightVariant, string> = {
 
 const SINGLE_DOT_FRETS = new Set([3, 5, 7, 9]);
 
-// Realistic string thicknesses: string 6 (low E) is thickest, string 1 (high e) thinnest.
-// Portrait layout: string line is vertical (width varies).
-const STRING_LINE_PORTRAIT: Record<number, string> = {
-  1: "before:absolute before:left-1/2 before:-translate-x-1/2 before:inset-y-0 before:w-px    before:bg-[#9ca3af]",
-  2: "before:absolute before:left-1/2 before:-translate-x-1/2 before:inset-y-0 before:w-px    before:bg-[#9ca3af]",
-  3: "before:absolute before:left-1/2 before:-translate-x-1/2 before:inset-y-0 before:w-[1.5px] before:bg-[#b0a898]",
-  4: "before:absolute before:left-1/2 before:-translate-x-1/2 before:inset-y-0 before:w-[2px]  before:bg-[#b8b090]",
-  5: "before:absolute before:left-1/2 before:-translate-x-1/2 before:inset-y-0 before:w-[2.5px] before:bg-[#c0b07a]",
-  6: "before:absolute before:left-1/2 before:-translate-x-1/2 before:inset-y-0 before:w-[3px]  before:bg-[#c8b86a]",
+// Per-string visual config.
+// Strings 1–2 are plain steel; 3–6 (G, D, A, E) are wound.
+const STRING_CONFIGS: Record<number, {
+  isWound: boolean;
+  size: number;   // px — used as width (portrait) or height (landscape)
+  color: string;
+}> = {
+  1: { isWound: false, size: 1,   color: "#9ca3af" },
+  2: { isWound: false, size: 1,   color: "#9ca3af" },
+  3: { isWound: true,  size: 2,   color: "#b0a898" },
+  4: { isWound: true,  size: 2.5, color: "#b8b090" },
+  5: { isWound: true,  size: 3,   color: "#c0b07a" },
+  6: { isWound: true,  size: 3.5, color: "#c8b86a" },
 };
-// Landscape layout: string line is horizontal (height varies).
-const STRING_LINE_LANDSCAPE: Record<number, string> = {
-  1: "before:absolute before:top-1/2 before:-translate-y-1/2 before:inset-x-0 before:h-px    before:bg-[#9ca3af]",
-  2: "before:absolute before:top-1/2 before:-translate-y-1/2 before:inset-x-0 before:h-px    before:bg-[#9ca3af]",
-  3: "before:absolute before:top-1/2 before:-translate-y-1/2 before:inset-x-0 before:h-[1.5px] before:bg-[#b0a898]",
-  4: "before:absolute before:top-1/2 before:-translate-y-1/2 before:inset-x-0 before:h-[2px]  before:bg-[#b8b090]",
-  5: "before:absolute before:top-1/2 before:-translate-y-1/2 before:inset-x-0 before:h-[2.5px] before:bg-[#c0b07a]",
-  6: "before:absolute before:top-1/2 before:-translate-y-1/2 before:inset-x-0 before:h-[3px]  before:bg-[#c8b86a]",
-};
+
+// ─── String line element ────────────────────────────────────────────────────
+// Renders as an absolutely-positioned span inside a FretCell.
+// Wound strings get a repeating diagonal gradient to mimic the helical winding.
+
+function StringLine({ stringNum, isPortrait }: { stringNum: number; isPortrait: boolean }) {
+  const cfg = STRING_CONFIGS[stringNum];
+  if (!cfg) return null;
+
+  // Diagonal winding pattern — direction flips between orientations so the
+  // helical angle always looks consistent.
+  const woundGradient = `repeating-linear-gradient(
+    ${isPortrait ? "-45deg" : "45deg"},
+    transparent 0px, transparent 1.5px,
+    rgba(0,0,0,0.28) 1.5px, rgba(0,0,0,0.28) 2.5px
+  )`;
+
+  // Subtle highlight edge to give the string a cylindrical feel.
+  const woundShadow = isPortrait
+    ? "1px 0 0 rgba(255,255,255,0.13), -1px 0 0 rgba(0,0,0,0.38)"
+    : "0 -1px 0 rgba(255,255,255,0.13), 0 1px 0 rgba(0,0,0,0.38)";
+
+  const style: React.CSSProperties = isPortrait
+    ? {
+        top: 0, bottom: 0,
+        left: "50%", transform: "translateX(-50%)",
+        width: `${cfg.size}px`,
+        backgroundColor: cfg.color,
+        backgroundImage: cfg.isWound ? woundGradient : undefined,
+        boxShadow: cfg.isWound ? woundShadow : undefined,
+      }
+    : {
+        left: 0, right: 0,
+        top: "50%", transform: "translateY(-50%)",
+        height: `${cfg.size}px`,
+        backgroundColor: cfg.color,
+        backgroundImage: cfg.isWound ? woundGradient : undefined,
+        boxShadow: cfg.isWound ? woundShadow : undefined,
+      };
+
+  return <span aria-hidden="true" className="absolute pointer-events-none z-0" style={style} />;
+}
+
+// ─── Nut notch element ──────────────────────────────────────────────────────
+// A small dark groove rendered over the nut bar at each string's position,
+// representing the slot the string sits in.
+
+function NutNotch({ stringNum, nutEdge }: { stringNum: number; nutEdge: "top" | "left" }) {
+  const cfg = STRING_CONFIGS[stringNum];
+  if (!cfg) return null;
+  // Notch is slightly wider/taller than the string itself.
+  const slotSize = Math.max(2, cfg.size + 1.5);
+
+  const style: React.CSSProperties = nutEdge === "top"
+    ? {
+        // Sits inside the 5px bottom border of fret-0 cells.
+        bottom: -5,
+        left: "50%", transform: "translateX(-50%)",
+        width: `${slotSize}px`,
+        height: "5px",
+        background: "rgba(8,4,0,0.52)",
+        borderRadius: "0 0 1px 1px",
+      }
+    : {
+        // Sits inside the 5px left border of fret-0 cells.
+        left: -5,
+        top: "50%", transform: "translateY(-50%)",
+        height: `${slotSize}px`,
+        width: "5px",
+        background: "rgba(8,4,0,0.52)",
+        borderRadius: "1px 0 0 1px",
+      };
+
+  return <span aria-hidden="true" className="absolute pointer-events-none z-10" style={style} />;
+}
 
 function getHighlight(
   highlights: FretHighlight[],
@@ -135,11 +205,6 @@ function FretCell({ string, fret, highlight, disabled, isNut, nutEdge, handleTap
     ? (isNut ? "border-b-[5px] border-b-[#d4c49a]" : "border-b border-b-[#7a6340]/60")
     : (isNut ? "border-l-[5px] border-l-[#d4c49a]" : "border-l border-l-[#7a6340]/60");
 
-  // String line: thickness and colour vary per string for realism
-  const stringLineClass = nutEdge === "top"
-    ? (STRING_LINE_PORTRAIT[string] ?? STRING_LINE_PORTRAIT[1]!)
-    : (STRING_LINE_LANDSCAPE[string] ?? STRING_LINE_LANDSCAPE[1]!);
-
   return (
     <button
       role="gridcell"
@@ -148,13 +213,18 @@ function FretCell({ string, fret, highlight, disabled, isNut, nutEdge, handleTap
       onClick={() => handleTap(string, fret)}
       className={[
         "relative flex items-center justify-center",
-        highlight ? "" : stringLineClass,
         nutClass,
         highlight ? "" : "hover:bg-[#3d2e1a]/50 active:bg-[#4a3820]/60",
         disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
         className,
       ].join(" ")}
     >
+      {/* String line (hidden when a highlight dot covers this position) */}
+      {!highlight && <StringLine stringNum={string} isPortrait={nutEdge === "top"} />}
+
+      {/* Nut notch — dark slot where the string seats in the nut (hidden when highlighted) */}
+      {isNut && !highlight && <NutNotch stringNum={string} nutEdge={nutEdge} />}
+
       {highlight && (
         <span
           aria-hidden="true"
