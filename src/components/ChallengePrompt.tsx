@@ -46,10 +46,30 @@ interface ChallengePromptProps {
    */
   rootNote?: string;
   /**
-   * For chord challenges: number of taps accumulated so far.
+   * For chord/find-all challenges: number of taps accumulated so far.
    * Shown as a badge when > 0.
    */
   chordTapCount?: number;
+  /**
+   * When provided, a "Done" button is rendered next to Replay.
+   * Pass the submit handler (submitChordAnswer, submitFindAllAnswer, etc.).
+   */
+  onDone?: () => void;
+  /** Label for the Done button, e.g. "Done (3 taps)". Defaults to "Done". */
+  doneLabel?: string;
+  /** Whether the Done button should be disabled. */
+  doneDisabled?: boolean;
+  /** For interval challenges: show the same-string hint instead of a Done button. */
+  sameStringHint?: boolean;
+  /**
+   * Hint system (no-root mode only).
+   * onHint — called when the 💡 button is pressed; omit to hide the button entirely.
+   * hintLevel — 0 = no hint shown, 1 = name revealed, 2 = name + position revealed.
+   * hintName  — the name to display at level 1+ (e.g. "A3", "C Major", "Perfect 5th").
+   */
+  onHint?: () => void;
+  hintLevel?: 0 | 1 | 2;
+  hintName?: string;
 }
 
 function getPromptText(
@@ -77,6 +97,13 @@ export default function ChallengePrompt({
   intervalName,
   rootNote,
   chordTapCount = 0,
+  onDone,
+  doneLabel = "Done",
+  doneDisabled = false,
+  sameStringHint = false,
+  onHint,
+  hintLevel = 0,
+  hintName,
 }: ChallengePromptProps) {
   const promptText = getPromptText(isPlaying, challengeType, intervalStep, intervalName);
 
@@ -116,6 +143,39 @@ export default function ChallengePrompt({
           <span aria-hidden="true">🔁</span>
           {isPlaying ? "Playing…" : "Replay"}
         </button>
+
+        {/* Done button — shown for chord/interval/find-all challenges */}
+        {!isPlaying && sameStringHint && (
+          <span className="text-xs text-amber-400 shrink-0">
+            ✓ Try another string
+          </span>
+        )}
+        {!isPlaying && onDone && !sameStringHint && (
+          <button
+            onClick={onDone}
+            disabled={doneDisabled}
+            className={[
+              "px-4 py-2 rounded-full font-semibold text-white text-sm transition-colors shrink-0",
+              doneDisabled
+                ? "bg-zinc-700 opacity-40 cursor-not-allowed"
+                : "bg-green-600 hover:bg-green-500 active:bg-green-700",
+            ].join(" ")}
+          >
+            {doneLabel}
+          </button>
+        )}
+
+        {/* Hint button — only shown when onHint is provided and level < 2 */}
+        {!isPlaying && onHint && hintLevel < 2 && (
+          <button
+            onClick={onHint}
+            aria-label="Hint"
+            title={hintLevel === 0 ? "Reveal name" : "Reveal a position"}
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-700 hover:bg-zinc-600 text-amber-400 text-sm transition-colors shrink-0"
+          >
+            💡
+          </button>
+        )}
       </div>
 
       {/* Show Root: display note/chord name as a text badge */}
@@ -126,14 +186,27 @@ export default function ChallengePrompt({
               ? "Root"
               : challengeType === "find-the-chord"
                 ? "Chord"
-                : challengeType === "find-all-positions"
-                  ? "Note"
-                  : "Note"}
+                : "Note"}
           </span>
-          <span className="text-sm font-bold text-amber-400 bg-zinc-800 px-2.5 py-0.5 rounded-md tracking-wide"
+          <span
+            className="text-sm font-bold text-amber-400 bg-zinc-800 px-2.5 py-0.5 rounded-md tracking-wide"
             data-testid={challengeType === "find-the-chord" ? "chord-label" : undefined}
-          >            {rootNote}
+          >
+            {rootNote}
           </span>
+        </div>
+      )}
+
+      {/* Hint name badge (level 1+) — only shown when Show Root is off */}
+      {!rootNote && hintLevel >= 1 && hintName && !isPlaying && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-amber-600 uppercase tracking-wide">Hint</span>
+          <span className="text-sm font-bold text-amber-300 bg-zinc-800 px-2.5 py-0.5 rounded-md tracking-wide">
+            {hintName}
+          </span>
+          {hintLevel === 1 && (
+            <span className="text-xs text-zinc-500">(press 💡 again for a position)</span>
+          )}
         </div>
       )}
     </div>

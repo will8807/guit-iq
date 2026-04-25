@@ -15,12 +15,15 @@ interface ChallengeFeedbackProps {
   result: EvaluationResult;
   score: { correct: number; total: number };
   onNext: () => void;
+  /** Whether the player used the hint button on this challenge */
+  hinted?: boolean;
 }
 
 export default function ChallengeFeedback({
   result,
   score,
   onNext,
+  hinted = false,
 }: ChallengeFeedbackProps) {
   const ir = result.intervalResult;
   const cr = result.chordResult;
@@ -48,6 +51,13 @@ export default function ChallengeFeedback({
         <p className="text-sm text-zinc-400 shrink-0">
           {score.correct} / {score.total}
         </p>
+
+        {/* Hinted badge */}
+        {hinted && (
+          <span className="text-xs text-amber-400 bg-zinc-800 px-2 py-0.5 rounded-full shrink-0">
+            💡 hinted
+          </span>
+        )}
 
         {/* Next button */}
         <button
