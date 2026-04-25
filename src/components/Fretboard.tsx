@@ -23,6 +23,7 @@
  * Fret numbering:   0 = open string, 12 = 12th fret
  */
 
+import { useState, useRef } from "react";
 import { getNoteAtPosition, type FretPosition } from "@/lib/music/fretboard";
 import { playNote, isAudioReady } from "@/lib/audio/engine";
 import type { FretboardLayout } from "@/hooks/useOrientation";
@@ -88,7 +89,7 @@ const STRING_CONFIGS: Record<number, {
 // Renders as an absolutely-positioned span inside a FretCell.
 // Wound strings get a repeating diagonal gradient to mimic the helical winding.
 
-function StringLine({ stringNum, isPortrait }: { stringNum: number; isPortrait: boolean }) {
+function StringLine({ stringNum, isPortrait, ref }: { stringNum: number; isPortrait: boolean; ref?: React.Ref<HTMLSpanElement> }) {
   const cfg = STRING_CONFIGS[stringNum];
   if (!cfg) return null;
 
@@ -123,7 +124,7 @@ function StringLine({ stringNum, isPortrait }: { stringNum: number; isPortrait: 
         boxShadow: cfg.isWound ? woundShadow : undefined,
       };
 
-  return <span aria-hidden="true" className="absolute pointer-events-none z-0" style={style} />;
+  return <span ref={ref} aria-hidden="true" className="absolute pointer-events-none z-0" style={style} />;
 }
 
 function getHighlight(
@@ -168,20 +169,50 @@ interface CellProps {
 }
 
 function FretCell({ string, fret, highlight, disabled, isPortrait, handleTap, className = "" }: CellProps) {
+  const [ripplePos, setRipplePos] = useState<{ x: number; y: number } | null>(null);
+  const [pressing, setPressing] = useState(false);
+  const stringRef = useRef<HTMLSpanElement>(null);
+
+  function handleClick(e: React.MouseEvent<HTMLButtonElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setRipplePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    setPressing(true);
+    // animate the string line briefly
+    if (stringRef.current) {
+      const cls = isPortrait ? "string-pluck-v" : "string-pluck-h";
+      stringRef.current.classList.remove(cls);
+      // force reflow
+      void stringRef.current.offsetWidth;
+      stringRef.current.classList.add(cls);
+    }
+    handleTap(string, fret);
+    setTimeout(() => setPressing(false), 80);
+  }
+
   return (
     <button
       role="gridcell"
       aria-label={`String ${string}, fret ${fret}`}
       aria-disabled={disabled}
-      onClick={() => handleTap(string, fret)}
+      onClick={handleClick}
       className={[
-        "relative flex items-center justify-center",
+        "relative flex items-center justify-center overflow-hidden",
+        "transition-transform duration-75",
+        pressing ? "scale-[0.91]" : "scale-100",
         highlight ? "" : "hover:bg-[#3d2e1a]/50 active:bg-[#4a3820]/60",
         disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
         className,
       ].join(" ")}
     >
-      {!highlight && <StringLine stringNum={string} isPortrait={isPortrait} />}
+      {!highlight && <StringLine stringNum={string} isPortrait={isPortrait} ref={stringRef} />}
+      {ripplePos && (
+        <span
+          aria-hidden="true"
+          className="fret-ripple"
+          style={{ left: ripplePos.x, top: ripplePos.y }}
+          onAnimationEnd={() => setRipplePos(null)}
+        />
+      )}
       {highlight && (
         <span
           aria-hidden="true"

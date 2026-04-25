@@ -24,3 +24,48 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ── Fretboard tap animations ─────────────────────────────────────────── */
+
+/* Ripple ring that expands out from the tap point */
+@keyframes fret-ripple {
+  0%   { transform: translate(-50%, -50%) scale(0);   opacity: 0.55; }
+  60%  { opacity: 0.3; }
+  100% { transform: translate(-50%, -50%) scale(2.8); opacity: 0; }
+}
+
+.fret-ripple {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  width: 48px;
+  height: 48px;
+  background: radial-gradient(circle, rgba(210,180,100,0.7) 0%, rgba(210,140,40,0.3) 60%, transparent 100%);
+  animation: fret-ripple 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* String vibration — brief horizontal wiggle on the string line inside an active cell */
+@keyframes string-pluck {
+  0%   { transform: translateX(-50%) scaleX(1)   skewY(0deg); }
+  20%  { transform: translateX(-50%) scaleX(1.4) skewY(2deg); }
+  40%  { transform: translateX(-50%) scaleX(0.8) skewY(-1.5deg); }
+  60%  { transform: translateX(-50%) scaleX(1.15) skewY(1deg); }
+  80%  { transform: translateX(-50%) scaleX(0.95) skewY(0deg); }
+  100% { transform: translateX(-50%) scaleX(1)   skewY(0deg); }
+}
+
+@keyframes string-pluck-h {
+  0%   { transform: translateY(-50%) scaleY(1)   skewX(0deg); }
+  20%  { transform: translateY(-50%) scaleY(1.4) skewX(2deg); }
+  40%  { transform: translateY(-50%) scaleY(0.8) skewX(-1.5deg); }
+  60%  { transform: translateY(-50%) scaleY(1.15) skewX(1deg); }
+  80%  { transform: translateY(-50%) scaleY(0.95) skewX(0deg); }
+  100% { transform: translateY(-50%) scaleY(1)   skewX(0deg); }
+}
+
+.string-pluck-v {
+  animation: string-pluck 260ms ease-out forwards !important;
+}
+.string-pluck-h {
+  animation: string-pluck-h 260ms ease-out forwards !important;
+}
