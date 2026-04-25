@@ -62,6 +62,24 @@ const HIGHLIGHT_CLASSES: Record<HighlightVariant, string> = {
   hint: "bg-yellow-400",
 };
 
+// Richer inline styles for highlight dots:
+//   - radial-gradient: top-left specular highlight → warm mid-tone → deep edge
+//   - box-shadow: soft glow matching the variant colour + drop shadow underneath
+const HIGHLIGHT_STYLES: Record<HighlightVariant, React.CSSProperties> = {
+  correct: {
+    background: "radial-gradient(circle at 32% 28%, rgba(255,255,255,0.75) 0%, #34d974 28%, #16a34a 60%, #0d6830 100%)",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.25)",
+  },
+  incorrect: {
+    background: "radial-gradient(circle at 32% 28%, rgba(255,255,255,0.70) 0%, #f87171 28%, #dc2626 60%, #991b1b 100%)",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.22)",
+  },
+  hint: {
+    background: "radial-gradient(circle at 32% 28%, rgba(255,255,255,0.80) 0%, #fde047 28%, #ca8a04 60%, #854d0e 100%)",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.30)",
+  },
+};
+
 const LABEL_CLASSES: Record<HighlightVariant, string> = {
   correct: "text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]",
   incorrect: "text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]",
@@ -300,7 +318,8 @@ function FretCell({ string, fret, highlight, disabled, isPortrait, handleTap, cl
         className,
       ].join(" ")}
     >
-      {!highlight && <StringLine stringNum={string} isPortrait={isPortrait} ref={stringRef} />}
+      {/* String always visible — highlight dot sits on top of it */}
+      <StringLine stringNum={string} isPortrait={isPortrait} ref={stringRef} />
       {ripplePos && (
         <span
           aria-hidden="true"
@@ -314,7 +333,8 @@ function FretCell({ string, fret, highlight, disabled, isPortrait, handleTap, cl
           aria-hidden="true"
           data-variant={highlight.variant}
           data-label={highlight.label}
-          className={`w-8 h-8 rounded-full z-10 flex items-center justify-center ${HIGHLIGHT_CLASSES[highlight.variant]}`}
+          className="w-8 h-8 rounded-full z-10 flex items-center justify-center"
+          style={HIGHLIGHT_STYLES[highlight.variant]}
         >
           {highlight.label && (
             <span className={`text-[11px] font-black leading-none select-none ${LABEL_CLASSES[highlight.variant]}`}>
