@@ -101,11 +101,11 @@ const PEARL_SIZE = "w-5 h-5";
 //      "pores" — gives the irregular feel real wood has
 //   3. The base edge-darkening gradient underneath
 
-/** Grain lines run top-to-bottom in portrait (along the neck length). */
+/** Grain lines follow the neck length in portrait (vertical stripes → gradient goes `to right`). */
 const GRAIN_V = [
   // Primary grain lines — dark, spaced ~7-8 px
   `repeating-linear-gradient(
-    to bottom,
+    to right,
     transparent        0px,
     transparent        5px,
     rgba(0,0,0,0.22)   5px,
@@ -121,7 +121,7 @@ const GRAIN_V = [
   )`,
   // Secondary pore lines — warm amber, slightly offset period
   `repeating-linear-gradient(
-    to bottom,
+    to right,
     transparent         0px,
     transparent         9px,
     rgba(140,80,20,0.13) 9px,
@@ -131,14 +131,14 @@ const GRAIN_V = [
     rgba(0,0,0,0.09)    23px,
     rgba(0,0,0,0.09)    24px
   )`,
-  // Base edge-to-center darkening
+  // Base edge-to-center darkening (edges of the neck board, left/right)
   `linear-gradient(to right, #160e04 0%, #231808 20%, #2e2210 50%, #231808 80%, #160e04 100%)`,
 ].join(", ");
 
-/** Same grain rotated for landscape layout (runs left-to-right). */
+/** Grain lines follow the neck length in landscape (horizontal stripes → gradient goes `to bottom`). */
 const GRAIN_H = [
   `repeating-linear-gradient(
-    to right,
+    to bottom,
     transparent        0px,
     transparent        5px,
     rgba(0,0,0,0.22)   5px,
@@ -153,7 +153,7 @@ const GRAIN_H = [
     rgba(180,110,30,0.09) 18px
   )`,
   `repeating-linear-gradient(
-    to right,
+    to bottom,
     transparent         0px,
     transparent         9px,
     rgba(140,80,20,0.13) 9px,
