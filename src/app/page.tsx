@@ -41,6 +41,12 @@ export default function Home() {
         >
           <span aria-hidden="true">🎸</span> Tuner
         </Link>
+        <Link
+          href="/demo"
+          className="w-full text-center px-10 py-4 bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-900 rounded-full text-lg font-semibold transition-colors flex items-center justify-center gap-2"
+        >
+          <span aria-hidden="true">🎨</span> UI Showcase
+        </Link>
       </div>
     </main>
   );
