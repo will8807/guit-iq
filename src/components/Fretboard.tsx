@@ -70,18 +70,18 @@ const HIGHLIGHT_CLASSES: Record<HighlightVariant, string> = {
 //   bg-green-800/60 border-green-600 | bg-red-900/60 border-red-600 | bg-amber-900/60 border-amber-500
 const HIGHLIGHT_STYLES: Record<HighlightVariant, React.CSSProperties> = {
   correct: {
-    background: "rgba(22,101,52,0.6)",       // green-800/60
-    border: "1.5px solid #16a34a",            // green-600
+    background: "#166534",                    // green-800 solid
+    border: "1.5px solid #16a34a",
     boxShadow: "0 0 8px 2px rgba(22,163,74,0.5)",
   },
   incorrect: {
-    background: "rgba(127,29,29,0.6)",        // red-900/60
-    border: "1.5px solid #dc2626",            // red-600
+    background: "#7f1d1d",                    // red-900 solid
+    border: "1.5px solid #dc2626",
     boxShadow: "0 0 8px 2px rgba(220,38,38,0.5)",
   },
   hint: {
-    background: "rgba(120,53,15,0.6)",        // amber-900/60
-    border: "1.5px solid #d97706",            // amber-500
+    background: "#78350f",                    // amber-900 solid
+    border: "1.5px solid #d97706",
     boxShadow: "0 0 8px 2px rgba(217,119,6,0.5)",
   },
 };
