@@ -63,20 +63,20 @@ const HIGHLIGHT_CLASSES: Record<HighlightVariant, string> = {
 };
 
 // Richer inline styles for highlight dots:
-//   - radial-gradient: top-left specular highlight → warm mid-tone → deep edge
-//   - box-shadow: soft glow matching the variant colour + drop shadow underneath
+//   - radial-gradient: top-left specular highlight → vivid mid-tone → deep edge
+//   - box-shadow: coloured glow + drop shadow underneath
 const HIGHLIGHT_STYLES: Record<HighlightVariant, React.CSSProperties> = {
   correct: {
-    background: "radial-gradient(circle at 32% 28%, rgba(255,255,255,0.75) 0%, #34d974 28%, #16a34a 60%, #0d6830 100%)",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.25)",
+    background: "radial-gradient(circle at 32% 28%, #ffffff 0%, #4ade80 22%, #16a34a 55%, #064e20 100%)",
+    boxShadow: "0 0 8px 2px rgba(74,222,128,0.7), 0 2px 6px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.35)",
   },
   incorrect: {
-    background: "radial-gradient(circle at 32% 28%, rgba(255,255,255,0.70) 0%, #f87171 28%, #dc2626 60%, #991b1b 100%)",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.22)",
+    background: "radial-gradient(circle at 32% 28%, #ffffff 0%, #f87171 22%, #dc2626 55%, #5a0a0a 100%)",
+    boxShadow: "0 0 8px 2px rgba(248,113,113,0.7), 0 2px 6px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.30)",
   },
   hint: {
-    background: "radial-gradient(circle at 32% 28%, rgba(255,255,255,0.80) 0%, #fde047 28%, #ca8a04 60%, #854d0e 100%)",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.30)",
+    background: "radial-gradient(circle at 32% 28%, #ffffff 0%, #fde047 22%, #ca8a04 55%, #3d1f00 100%)",
+    boxShadow: "0 0 8px 2px rgba(253,224,71,0.65), 0 2px 6px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.40)",
   },
 };
 
