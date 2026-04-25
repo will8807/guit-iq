@@ -28,12 +28,20 @@ export default function Home() {
       </ul>
 
       {/* CTA */}
-      <Link
-        href="/session"
-        className="px-10 py-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 rounded-full text-xl font-bold transition-colors"
-      >
-        Start Training
-      </Link>
+      <div className="flex flex-col items-center gap-3 w-full max-w-xs">
+        <Link
+          href="/session"
+          className="w-full text-center px-10 py-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 rounded-full text-xl font-bold transition-colors"
+        >
+          Start Training
+        </Link>
+        <Link
+          href="/tuner"
+          className="w-full text-center px-10 py-4 bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-900 rounded-full text-lg font-semibold transition-colors flex items-center justify-center gap-2"
+        >
+          <span aria-hidden="true">🎸</span> Tuner
+        </Link>
+      </div>
     </main>
   );
 }
