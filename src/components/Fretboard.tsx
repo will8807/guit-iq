@@ -119,6 +119,9 @@ const PEARL_SIZE = "w-5 h-5";
 //      "pores" — gives the irregular feel real wood has
 //   3. The base edge-darkening gradient underneath
 
+// Dark gradient for the area surrounding the fretboard (behind labels, open-string zone)
+const DARK_BG = "linear-gradient(to bottom, #0c0906 0%, #181208 50%, #0c0906 100%)";
+
 /** Grain lines follow the neck length in portrait (vertical stripes → gradient goes `to right`). */
 const GRAIN_V = [
   // Primary grain lines — dark, spaced ~7-8 px
@@ -426,9 +429,9 @@ function PortraitFretboard({ highlights, disabled, handleTap }: LayoutProps) {
       role="grid"
       aria-label="Guitar fretboard"
       className="w-full select-none rounded-md overflow-hidden"
-      style={{ background: GRAIN_V }}
+      style={{ background: DARK_BG }}
     >
-      {/* String name labels */}
+      {/* String name labels — sit on the dark surround, above the fretboard */}
       <div aria-hidden="true" className="flex pt-1 pb-0.5">
         <div className="w-7 shrink-0" />
         {STRINGS_PORTRAIT.map((s) => (
@@ -438,7 +441,7 @@ function PortraitFretboard({ highlights, disabled, handleTap }: LayoutProps) {
         ))}
       </div>
 
-      {/* Open string row (fret 0) — narrow, no fret number */}
+      {/* Open string row — above the nut, on the dark surround */}
       <div role="row" className="flex">
         <div aria-hidden="true" className="w-7 shrink-0 flex items-center justify-end pr-1 text-[10px] text-[#6a5030]/70">
           ○
@@ -457,47 +460,50 @@ function PortraitFretboard({ highlights, disabled, handleTap }: LayoutProps) {
         ))}
       </div>
 
-      {/* Nut bar */}
-      <PortraitNutBar strings={STRINGS_PORTRAIT} />
+      {/* Fretboard proper: nut + frets 1–12 — bounded by the nut edge, wood grain surface */}
+      <div style={{ background: GRAIN_V }}>
+        {/* Nut bar */}
+        <PortraitNutBar strings={STRINGS_PORTRAIT} />
 
-      {/* Fret rows 1–12 */}
-      {FRETS_MAIN.map((fret) => (
-        <div key={fret}>
-          <div role="row" className="flex">
-            <div aria-hidden="true" className="w-7 shrink-0 flex items-center justify-center text-[11px] font-medium text-[#8a7050]">
-              {fret}
-            </div>
-            <div className="relative flex flex-1">
-              {STRINGS_PORTRAIT.map((string) => (
-                <FretCell
-                  key={string}
-                  string={string}
-                  fret={fret}
-                  highlight={getHighlight(highlights, string, fret)}
-                  disabled={disabled}
-                  isPortrait={true}
-                  handleTap={handleTap}
-                  className="flex-1 h-12 border-b border-b-[#7a6340]/60"
-                />
-              ))}
+        {/* Fret rows 1–12 */}
+        {FRETS_MAIN.map((fret) => (
+          <div key={fret}>
+            <div role="row" className="flex">
+              <div aria-hidden="true" className="w-7 shrink-0 flex items-center justify-center text-[11px] font-medium text-[#8a7050]">
+                {fret}
+              </div>
+              <div className="relative flex flex-1">
+                {STRINGS_PORTRAIT.map((string) => (
+                  <FretCell
+                    key={string}
+                    string={string}
+                    fret={fret}
+                    highlight={getHighlight(highlights, string, fret)}
+                    disabled={disabled}
+                    isPortrait={true}
+                    handleTap={handleTap}
+                    className="flex-1 h-12 border-b border-b-[#7a6340]/60"
+                  />
+                ))}
 
-              {/* Pearl inlay dots */}
-              {SINGLE_DOT_FRETS.has(fret) && (
-                <span aria-hidden="true" className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-20`}
-                  style={PEARL_STYLE} />
-              )}
-              {fret === 12 && (
-                <>
-                  <span aria-hidden="true" className={`absolute left-1/3 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-20`}
+                {/* Pearl inlay dots */}
+                {SINGLE_DOT_FRETS.has(fret) && (
+                  <span aria-hidden="true" className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-20`}
                     style={PEARL_STYLE} />
-                  <span aria-hidden="true" className={`absolute left-2/3 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-20`}
-                    style={PEARL_STYLE} />
-                </>
-              )}
+                )}
+                {fret === 12 && (
+                  <>
+                    <span aria-hidden="true" className={`absolute left-1/3 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-20`}
+                      style={PEARL_STYLE} />
+                    <span aria-hidden="true" className={`absolute left-2/3 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-20`}
+                      style={PEARL_STYLE} />
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
@@ -517,9 +523,9 @@ function LandscapeFretboard({ highlights, disabled, handleTap }: LayoutProps) {
       role="grid"
       aria-label="Guitar fretboard"
       className="w-full select-none rounded-md overflow-hidden"
-      style={{ background: GRAIN_H }}
+      style={{ background: DARK_BG }}
     >
-      {/* Fret number header */}
+      {/* Fret number header — sits on the dark surround */}
       <div aria-hidden="true" className="flex pt-1 pb-0.5">
         <div className="w-7 shrink-0" />            {/* string label spacer */}
         <div className="w-8 shrink-0 text-center text-[10px] text-[#6a5030]/70">○</div> {/* open col */}
@@ -533,14 +539,21 @@ function LandscapeFretboard({ highlights, disabled, handleTap }: LayoutProps) {
 
       {/* String rows */}
       <div className="relative">
+        {/* Wood grain surface — covers nut + fret cells area only (left edge = nut left edge) */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-y-0 pointer-events-none"
+          style={{ left: "calc(1.75rem + 2rem)", right: 0, background: GRAIN_H }}
+        />
+
         {STRINGS_LANDSCAPE.map((string) => (
           <div key={string} role="row" className="flex items-center">
-            {/* String label */}
+            {/* String label — on the dark surround */}
             <div aria-hidden="true" className="w-7 shrink-0 text-center text-[11px] font-semibold text-[#a89070]">
               {STRING_NAMES[string]}
             </div>
 
-            {/* Open string cell (fret 0) — narrow, no fret border */}
+            {/* Open string cell (fret 0) — above the nut, on the dark surround */}
             <FretCell
               string={string}
               fret={0}
