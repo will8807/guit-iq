@@ -62,28 +62,32 @@ const HIGHLIGHT_CLASSES: Record<HighlightVariant, string> = {
   hint: "bg-yellow-400",
 };
 
-// Richer inline styles for highlight dots:
-//   - radial-gradient: bright vivid centre fading to a deep saturated edge
-//   - box-shadow: wide coloured glow + drop shadow
+// Dark-fill ring style matching the reference design:
+//   - near-black interior with a faint inner glow
+//   - vivid coloured border ring
+//   - outer coloured halo glow
 const HIGHLIGHT_STYLES: Record<HighlightVariant, React.CSSProperties> = {
   correct: {
-    background: "radial-gradient(circle at 50% 50%, #bbf7d0 0%, #22c55e 40%, #15803d 100%)",
-    boxShadow: "0 0 14px 5px rgba(34,197,94,0.95), 0 0 4px 1px rgba(34,197,94,0.6), 0 2px 4px rgba(0,0,0,0.8)",
+    background: "radial-gradient(circle at 50% 50%, #0d2318 0%, #060d09 70%)",
+    border: "2.5px solid #22c55e",
+    boxShadow: "0 0 12px 4px rgba(34,197,94,0.85), 0 0 4px 1px rgba(34,197,94,0.5), inset 0 0 6px rgba(34,197,94,0.2)",
   },
   incorrect: {
-    background: "radial-gradient(circle at 50% 50%, #fecaca 0%, #ef4444 40%, #991b1b 100%)",
-    boxShadow: "0 0 14px 5px rgba(239,68,68,0.95), 0 0 4px 1px rgba(239,68,68,0.6), 0 2px 4px rgba(0,0,0,0.8)",
+    background: "radial-gradient(circle at 50% 50%, #2a0a0a 0%, #0d0404 70%)",
+    border: "2.5px solid #ef4444",
+    boxShadow: "0 0 12px 4px rgba(239,68,68,0.85), 0 0 4px 1px rgba(239,68,68,0.5), inset 0 0 6px rgba(239,68,68,0.2)",
   },
   hint: {
-    background: "radial-gradient(circle at 50% 50%, #fef9c3 0%, #eab308 40%, #854d0e 100%)",
-    boxShadow: "0 0 14px 5px rgba(234,179,8,0.95), 0 0 4px 1px rgba(234,179,8,0.6), 0 2px 4px rgba(0,0,0,0.8)",
+    background: "radial-gradient(circle at 50% 50%, #1f1600 0%, #0c0900 70%)",
+    border: "2.5px solid #eab308",
+    boxShadow: "0 0 12px 4px rgba(234,179,8,0.85), 0 0 4px 1px rgba(234,179,8,0.5), inset 0 0 6px rgba(234,179,8,0.2)",
   },
 };
 
 const LABEL_CLASSES: Record<HighlightVariant, string> = {
-  correct: "text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]",
-  incorrect: "text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]",
-  hint: "text-zinc-900",
+  correct: "text-green-400 [text-shadow:0_0_6px_rgba(34,197,94,0.8)]",
+  incorrect: "text-red-400 [text-shadow:0_0_6px_rgba(239,68,68,0.8)]",
+  hint: "text-yellow-400 [text-shadow:0_0_6px_rgba(234,179,8,0.8)]",
 };
 
 const SINGLE_DOT_FRETS = new Set([3, 5, 7, 9]);
@@ -343,7 +347,7 @@ function FretCell({ string, fret, highlight, disabled, isPortrait, handleTap, cl
           style={HIGHLIGHT_STYLES[highlight.variant]}
         >
           {highlight.label && (
-            <span className={`text-[11px] font-black leading-none select-none ${LABEL_CLASSES[highlight.variant]}`}>
+            <span className={`text-[12px] font-black leading-none select-none tracking-tight ${LABEL_CLASSES[highlight.variant]}`}>
               {highlight.label}
             </span>
           )}
