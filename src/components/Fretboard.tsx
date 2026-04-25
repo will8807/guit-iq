@@ -238,7 +238,7 @@ function StringLine({ stringNum, isPortrait, ref }: { stringNum: number; isPortr
         boxShadow: cfg.isWound ? woundShadow : undefined,
       };
 
-  return <span ref={ref} aria-hidden="true" className="absolute pointer-events-none z-0" style={style} />;
+  return <span ref={ref} aria-hidden="true" data-string={stringNum} className="absolute pointer-events-none z-0" style={style} />;
 }
 
 function getHighlight(
@@ -291,14 +291,17 @@ function FretCell({ string, fret, highlight, disabled, isPortrait, handleTap, cl
     const rect = e.currentTarget.getBoundingClientRect();
     setRipplePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
     setPressing(true);
-    // animate the string line briefly
-    if (stringRef.current) {
-      const cls = isPortrait ? "string-pluck-v" : "string-pluck-h";
-      stringRef.current.classList.remove(cls);
-      // force reflow
-      void stringRef.current.offsetWidth;
-      stringRef.current.classList.add(cls);
-    }
+    // animate every segment of this string across the whole fretboard
+    const cls = isPortrait ? "string-pluck-v" : "string-pluck-h";
+    const grid = e.currentTarget.closest('[role="grid"]');
+    const allSegments = grid
+      ? Array.from(grid.querySelectorAll<HTMLSpanElement>(`[data-string="${string}"]`))
+      : stringRef.current ? [stringRef.current] : [];
+    allSegments.forEach((seg) => {
+      seg.classList.remove(cls);
+      void seg.offsetWidth; // force reflow per segment
+      seg.classList.add(cls);
+    });
     handleTap(string, fret);
     setTimeout(() => setPressing(false), 80);
   }
