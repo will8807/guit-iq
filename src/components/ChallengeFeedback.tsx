@@ -37,8 +37,8 @@ export default function ChallengeFeedback({
           className={[
             "flex items-center gap-2 px-4 py-2 rounded-lg",
             result.correct
-              ? "bg-green-800/60 border border-green-600"
-              : "bg-red-900/60 border border-red-600",
+              ? "bg-green-800/60 border border-green-600 feedback-correct"
+              : "bg-red-900/60 border border-red-600 feedback-incorrect",
           ].join(" ")}
         >
           <span className="text-lg">{result.correct ? "✓" : "✗"}</span>

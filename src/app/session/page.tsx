@@ -3,7 +3,7 @@
 import { useEffect, useCallback, useState } from "react";
 import { useSessionStore } from "@/store/sessionStore";
 import { useSettingsStore } from "@/store/settingsStore";
-import { initAudio, playNote, playChord, isAudioReady } from "@/lib/audio/engine";
+import { initAudio, playNote, playChord, isAudioReady, playFeedbackChime } from "@/lib/audio/engine";
 import Fretboard, { type FretHighlight } from "@/components/Fretboard";
 import ChallengePrompt from "@/components/ChallengePrompt";
 import ChallengeFeedback from "@/components/ChallengeFeedback";
@@ -159,6 +159,14 @@ export default function SessionPage() {
     nextChallenge();
     startChallenge();
   }, [nextChallenge, startChallenge]);
+
+  // ── Feedback chime ────────────────────────────────────────────────────────
+  // Play a positive or negative sound the moment the feedback phase begins.
+  useEffect(() => {
+    if (phase === "feedback" && lastResult) {
+      playFeedbackChime(lastResult.correct ? "correct" : "incorrect");
+    }
+  }, [phase, lastResult]);
 
   // ── Keyboard shortcuts ────────────────────────────────────────────────────
   // Space → replay, Enter → submit Done / advance to next challenge
