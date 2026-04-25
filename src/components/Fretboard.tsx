@@ -64,19 +64,19 @@ const HIGHLIGHT_CLASSES: Record<HighlightVariant, string> = {
 
 // Richer inline styles for highlight dots:
 //   - radial-gradient: bright vivid centre fading to a deep saturated edge
-//   - box-shadow: coloured glow + drop shadow
+//   - box-shadow: wide coloured glow + drop shadow
 const HIGHLIGHT_STYLES: Record<HighlightVariant, React.CSSProperties> = {
   correct: {
-    background: "radial-gradient(circle at 50% 50%, #86efac 0%, #22c55e 45%, #15803d 100%)",
-    boxShadow: "0 0 10px 3px rgba(34,197,94,0.8), 0 2px 4px rgba(0,0,0,0.7)",
+    background: "radial-gradient(circle at 50% 50%, #bbf7d0 0%, #22c55e 40%, #15803d 100%)",
+    boxShadow: "0 0 14px 5px rgba(34,197,94,0.95), 0 0 4px 1px rgba(34,197,94,0.6), 0 2px 4px rgba(0,0,0,0.8)",
   },
   incorrect: {
-    background: "radial-gradient(circle at 50% 50%, #fca5a5 0%, #ef4444 45%, #991b1b 100%)",
-    boxShadow: "0 0 10px 3px rgba(239,68,68,0.8), 0 2px 4px rgba(0,0,0,0.7)",
+    background: "radial-gradient(circle at 50% 50%, #fecaca 0%, #ef4444 40%, #991b1b 100%)",
+    boxShadow: "0 0 14px 5px rgba(239,68,68,0.95), 0 0 4px 1px rgba(239,68,68,0.6), 0 2px 4px rgba(0,0,0,0.8)",
   },
   hint: {
-    background: "radial-gradient(circle at 50% 50%, #fef08a 0%, #eab308 45%, #854d0e 100%)",
-    boxShadow: "0 0 10px 3px rgba(234,179,8,0.8), 0 2px 4px rgba(0,0,0,0.7)",
+    background: "radial-gradient(circle at 50% 50%, #fef9c3 0%, #eab308 40%, #854d0e 100%)",
+    boxShadow: "0 0 14px 5px rgba(234,179,8,0.95), 0 0 4px 1px rgba(234,179,8,0.6), 0 2px 4px rgba(0,0,0,0.8)",
   },
 };
 
@@ -339,7 +339,7 @@ function FretCell({ string, fret, highlight, disabled, isPortrait, handleTap, cl
           aria-hidden="true"
           data-variant={highlight.variant}
           data-label={highlight.label}
-          className="w-8 h-8 rounded-full z-30 flex items-center justify-center"
+          className="w-9 h-9 rounded-full z-30 flex items-center justify-center"
           style={HIGHLIGHT_STYLES[highlight.variant]}
         >
           {highlight.label && (
