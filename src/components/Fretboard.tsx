@@ -316,36 +316,38 @@ function FretCell({ string, fret, highlight, disabled, isPortrait, handleTap, cl
   }
 
   return (
-    <button
-      role="gridcell"
-      aria-label={`String ${string}, fret ${fret}`}
-      aria-disabled={disabled}
-      onClick={handleClick}
-      className={[
-        "relative flex items-center justify-center overflow-hidden",
-        "transition-transform duration-75",
-        pressing ? "scale-[0.91]" : "scale-100",
-        highlight ? "" : "hover:bg-[#3d2e1a]/50 active:bg-[#4a3820]/60",
-        disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
-        className,
-      ].join(" ")}
-    >
-      {/* String always visible — highlight dot sits on top of it */}
-      <StringLine stringNum={string} isPortrait={isPortrait} ref={stringRef} />
-      {ripplePos && (
-        <span
-          aria-hidden="true"
-          className="fret-ripple"
-          style={{ left: ripplePos.x, top: ripplePos.y }}
-          onAnimationEnd={() => setRipplePos(null)}
-        />
-      )}
+    <div className={["relative", className].join(" ")}>
+      <button
+        role="gridcell"
+        aria-label={`String ${string}, fret ${fret}`}
+        aria-disabled={disabled}
+        onClick={handleClick}
+        className={[
+          "w-full h-full flex items-center justify-center overflow-hidden",
+          "transition-transform duration-75",
+          pressing ? "scale-[0.91]" : "scale-100",
+          highlight ? "" : "hover:bg-[#3d2e1a]/50 active:bg-[#4a3820]/60",
+          disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
+        ].join(" ")}
+      >
+        {/* String always visible */}
+        <StringLine stringNum={string} isPortrait={isPortrait} ref={stringRef} />
+        {ripplePos && (
+          <span
+            aria-hidden="true"
+            className="fret-ripple"
+            style={{ left: ripplePos.x, top: ripplePos.y }}
+            onAnimationEnd={() => setRipplePos(null)}
+          />
+        )}
+      </button>
+      {/* Highlight dot rendered outside the button so overflow-hidden doesn't composite it */}
       {highlight && (
         <span
           aria-hidden="true"
           data-variant={highlight.variant}
           data-label={highlight.label}
-          className="w-9 h-9 rounded-full z-30 flex items-center justify-center"
+          className="absolute inset-0 m-auto w-9 h-9 rounded-full z-30 flex items-center justify-center pointer-events-none"
           style={HIGHLIGHT_STYLES[highlight.variant]}
         >
           {highlight.label && (
@@ -355,7 +357,7 @@ function FretCell({ string, fret, highlight, disabled, isPortrait, handleTap, cl
           )}
         </span>
       )}
-    </button>
+    </div>
   );
 }
 
