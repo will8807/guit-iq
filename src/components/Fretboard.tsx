@@ -66,28 +66,30 @@ const HIGHLIGHT_CLASSES: Record<HighlightVariant, string> = {
 //   - near-black interior with a faint inner glow
 //   - vivid coloured border ring
 //   - outer coloured halo glow
+// Note dot style — matches the correct/incorrect badge style from ChallengeFeedback:
+//   bg-green-800/60 border-green-600 | bg-red-900/60 border-red-600 | bg-amber-900/60 border-amber-500
 const HIGHLIGHT_STYLES: Record<HighlightVariant, React.CSSProperties> = {
   correct: {
-    background: "#0a1f11",
-    border: "2.5px solid #22c55e",
-    boxShadow: "0 0 12px 4px rgba(34,197,94,0.85), 0 0 4px 1px rgba(34,197,94,0.5), inset 0 0 6px rgba(34,197,94,0.2)",
+    background: "rgba(22,101,52,0.6)",       // green-800/60
+    border: "1.5px solid #16a34a",            // green-600
+    boxShadow: "0 0 8px 2px rgba(22,163,74,0.5)",
   },
   incorrect: {
-    background: "#1f0a0a",
-    border: "2.5px solid #ef4444",
-    boxShadow: "0 0 12px 4px rgba(239,68,68,0.85), 0 0 4px 1px rgba(239,68,68,0.5), inset 0 0 6px rgba(239,68,68,0.2)",
+    background: "rgba(127,29,29,0.6)",        // red-900/60
+    border: "1.5px solid #dc2626",            // red-600
+    boxShadow: "0 0 8px 2px rgba(220,38,38,0.5)",
   },
   hint: {
-    background: "#1a1200",
-    border: "2.5px solid #eab308",
-    boxShadow: "0 0 12px 4px rgba(234,179,8,0.85), 0 0 4px 1px rgba(234,179,8,0.5), inset 0 0 6px rgba(234,179,8,0.2)",
+    background: "rgba(120,53,15,0.6)",        // amber-900/60
+    border: "1.5px solid #d97706",            // amber-500
+    boxShadow: "0 0 8px 2px rgba(217,119,6,0.5)",
   },
 };
 
 const LABEL_CLASSES: Record<HighlightVariant, string> = {
-  correct: "text-green-400 [text-shadow:0_0_6px_rgba(34,197,94,0.8)]",
-  incorrect: "text-red-400 [text-shadow:0_0_6px_rgba(239,68,68,0.8)]",
-  hint: "text-yellow-400 [text-shadow:0_0_6px_rgba(234,179,8,0.8)]",
+  correct: "text-green-300 font-semibold",
+  incorrect: "text-red-300 font-semibold",
+  hint: "text-amber-300 font-semibold",
 };
 
 const SINGLE_DOT_FRETS = new Set([3, 5, 7, 9]);
