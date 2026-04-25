@@ -339,7 +339,7 @@ function FretCell({ string, fret, highlight, disabled, isPortrait, handleTap, cl
           aria-hidden="true"
           data-variant={highlight.variant}
           data-label={highlight.label}
-          className="w-8 h-8 rounded-full z-10 flex items-center justify-center"
+          className="w-8 h-8 rounded-full z-30 flex items-center justify-center"
           style={HIGHLIGHT_STYLES[highlight.variant]}
         >
           {highlight.label && (
@@ -496,14 +496,14 @@ function PortraitFretboard({ highlights, disabled, handleTap }: LayoutProps) {
 
               {/* Pearl inlay dots */}
               {SINGLE_DOT_FRETS.has(fret) && (
-                <span aria-hidden="true" className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-20`}
+                <span aria-hidden="true" className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-10`}
                   style={PEARL_STYLE} />
               )}
               {fret === 12 && (
                 <>
-                  <span aria-hidden="true" className={`absolute left-1/3 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-20`}
+                  <span aria-hidden="true" className={`absolute left-1/3 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-10`}
                     style={PEARL_STYLE} />
-                  <span aria-hidden="true" className={`absolute left-2/3 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-20`}
+                  <span aria-hidden="true" className={`absolute left-2/3 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-10`}
                     style={PEARL_STYLE} />
                 </>
               )}
@@ -553,6 +553,26 @@ function LandscapeFretboard({ highlights, disabled, handleTap }: LayoutProps) {
           style={{ left: "calc(1.75rem + 2rem)", right: 0, background: GRAIN_H }}
         />
 
+        {/* Pearl inlay dots — rendered before string rows so they sit beneath highlight dots */}
+        <div aria-hidden="true" className="absolute top-0 bottom-0 pointer-events-none"
+          style={{ left: "calc(1.75rem + 2rem + 8px)", right: 0 }}>
+          {[...SINGLE_DOT_FRETS].map((fret) => (
+            <span
+              key={fret}
+              className={`absolute ${PEARL_SIZE} -translate-x-1/2 -translate-y-1/2 rounded-full`}
+              style={{
+                left: DOT_LEFT[fret],
+                top: "50%",
+                ...PEARL_STYLE,
+              }}
+            />
+          ))}
+          <span className={`absolute ${PEARL_SIZE} -translate-x-1/2 -translate-y-1/2 rounded-full`}
+            style={{ left: DOT_LEFT[12], top: "33%", ...PEARL_STYLE }} />
+          <span className={`absolute ${PEARL_SIZE} -translate-x-1/2 -translate-y-1/2 rounded-full`}
+            style={{ left: DOT_LEFT[12], top: "67%", ...PEARL_STYLE }} />
+        </div>
+
         {STRINGS_LANDSCAPE.map((string) => (
           <div key={string} role="row" className="flex items-center">
             {/* String label — on the dark surround */}
@@ -590,25 +610,6 @@ function LandscapeFretboard({ highlights, disabled, handleTap }: LayoutProps) {
           </div>
         ))}
 
-        {/* Pearl inlay dots — overlaid on the frets-1–12 area only */}
-        <div aria-hidden="true" className="absolute top-0 bottom-0 pointer-events-none"
-          style={{ left: "calc(1.75rem + 2rem + 8px)", right: 0 }}>
-          {[...SINGLE_DOT_FRETS].map((fret) => (
-            <span
-              key={fret}
-              className={`absolute ${PEARL_SIZE} -translate-x-1/2 -translate-y-1/2 rounded-full`}
-              style={{
-                left: DOT_LEFT[fret],
-                top: "50%",
-                ...PEARL_STYLE,
-              }}
-            />
-          ))}
-          <span className={`absolute ${PEARL_SIZE} -translate-x-1/2 -translate-y-1/2 rounded-full`}
-            style={{ left: DOT_LEFT[12], top: "33%", ...PEARL_STYLE }} />
-          <span className={`absolute ${PEARL_SIZE} -translate-x-1/2 -translate-y-1/2 rounded-full`}
-            style={{ left: DOT_LEFT[12], top: "67%", ...PEARL_STYLE }} />
-        </div>
       </div>
     </div>
   );
