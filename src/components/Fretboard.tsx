@@ -50,7 +50,8 @@ interface FretboardProps {
 const STRINGS_PORTRAIT = [6, 5, 4, 3, 2, 1] as const;
 // Landscape: strings as rows top→bottom (high e first, low E at bottom)
 const STRINGS_LANDSCAPE = [1, 2, 3, 4, 5, 6] as const;
-const FRETS = Array.from({ length: 13 }, (_, i) => i); // 0–12
+/** Frets in the main playable grid (right of the nut). Fret 0 = open string, rendered separately. */
+const FRETS_MAIN = Array.from({ length: 12 }, (_, i) => i + 1); // 1–12
 
 const STRING_NAMES: Record<number, string> = { 1: "e", 2: "B", 3: "G", 4: "D", 5: "A", 6: "E" };
 
@@ -125,39 +126,6 @@ function StringLine({ stringNum, isPortrait }: { stringNum: number; isPortrait: 
   return <span aria-hidden="true" className="absolute pointer-events-none z-0" style={style} />;
 }
 
-// ─── Nut notch element ──────────────────────────────────────────────────────
-// A small dark groove rendered over the nut bar at each string's position,
-// representing the slot the string sits in.
-
-function NutNotch({ stringNum, nutEdge }: { stringNum: number; nutEdge: "top" | "left" }) {
-  const cfg = STRING_CONFIGS[stringNum];
-  if (!cfg) return null;
-  // Notch is slightly wider/taller than the string itself.
-  const slotSize = Math.max(2, cfg.size + 1.5);
-
-  const style: React.CSSProperties = nutEdge === "top"
-    ? {
-        // Sits inside the 5px bottom border of fret-0 cells.
-        bottom: -5,
-        left: "50%", transform: "translateX(-50%)",
-        width: `${slotSize}px`,
-        height: "5px",
-        background: "rgba(8,4,0,0.52)",
-        borderRadius: "0 0 1px 1px",
-      }
-    : {
-        // Sits inside the 5px left border of fret-0 cells.
-        left: -5,
-        top: "50%", transform: "translateY(-50%)",
-        height: `${slotSize}px`,
-        width: "5px",
-        background: "rgba(8,4,0,0.52)",
-        borderRadius: "1px 0 0 1px",
-      };
-
-  return <span aria-hidden="true" className="absolute pointer-events-none z-10" style={style} />;
-}
-
 function getHighlight(
   highlights: FretHighlight[],
   string: number,
@@ -194,17 +162,12 @@ interface CellProps {
   fret: number;
   highlight: FretHighlight | undefined;
   disabled: boolean;
-  isNut: boolean;
-  nutEdge: "top" | "left";
+  isPortrait: boolean;
   handleTap: (string: number, fret: number) => void;
   className?: string;
 }
 
-function FretCell({ string, fret, highlight, disabled, isNut, nutEdge, handleTap, className = "" }: CellProps) {
-  const nutClass = nutEdge === "top"
-    ? (isNut ? "border-b-[5px] border-b-[#d4c49a]" : "border-b border-b-[#7a6340]/60")
-    : (isNut ? "border-l-[5px] border-l-[#d4c49a]" : "border-l border-l-[#7a6340]/60");
-
+function FretCell({ string, fret, highlight, disabled, isPortrait, handleTap, className = "" }: CellProps) {
   return (
     <button
       role="gridcell"
@@ -213,18 +176,12 @@ function FretCell({ string, fret, highlight, disabled, isNut, nutEdge, handleTap
       onClick={() => handleTap(string, fret)}
       className={[
         "relative flex items-center justify-center",
-        nutClass,
         highlight ? "" : "hover:bg-[#3d2e1a]/50 active:bg-[#4a3820]/60",
         disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
         className,
       ].join(" ")}
     >
-      {/* String line (hidden when a highlight dot covers this position) */}
-      {!highlight && <StringLine stringNum={string} isPortrait={nutEdge === "top"} />}
-
-      {/* Nut notch — dark slot where the string seats in the nut (hidden when highlighted) */}
-      {isNut && !highlight && <NutNotch stringNum={string} nutEdge={nutEdge} />}
-
+      {!highlight && <StringLine stringNum={string} isPortrait={isPortrait} />}
       {highlight && (
         <span
           aria-hidden="true"
@@ -243,8 +200,69 @@ function FretCell({ string, fret, highlight, disabled, isNut, nutEdge, handleTap
   );
 }
 
+// ─── Nut bar segments ───────────────────────────────────────────────────────
+// NutSegment: one ivory column-slice per string row in landscape layout.
+// PortraitNutBar: full-width ivory row in portrait layout.
+// Both render the string continuing through the nut and a dark notch slot.
+
+const NUT_BG = "linear-gradient(to right, #ede5c0 0%, #d4b458 35%, #c0982a 50%, #d4b458 65%, #ede5c0 100%)";
+const NUT_BG_H = "linear-gradient(to bottom, #ede5c0 0%, #d4b458 35%, #c0982a 50%, #d4b458 65%, #ede5c0 100%)";
+
+function NutSegment({ stringNum, rowHeight }: { stringNum: number; rowHeight: string }) {
+  const cfg = STRING_CONFIGS[stringNum]!;
+  const slotH = Math.max(2, cfg.size + 1.5);
+  return (
+    <div
+      aria-hidden="true"
+      className={`flex-shrink-0 relative ${rowHeight}`}
+      style={{ width: "8px", background: NUT_BG, boxShadow: "1px 0 3px rgba(0,0,0,0.5), -1px 0 1px rgba(255,255,220,0.15)" }}
+    >
+      {/* String continues through the nut */}
+      <StringLine stringNum={stringNum} isPortrait={false} />
+      {/* Notch slot */}
+      <span
+        className="absolute top-1/2 -translate-y-1/2 inset-x-0 pointer-events-none z-10"
+        style={{ height: `${slotH}px`, background: "rgba(4,2,0,0.6)", borderRadius: "0 1px 1px 0" }}
+      />
+    </div>
+  );
+}
+
+function PortraitNutBar({ strings }: { strings: readonly number[] }) {
+  return (
+    <div aria-hidden="true" className="flex">
+      <div className="w-7 shrink-0" />
+      <div
+        className="flex-1 relative"
+        style={{ height: "8px", background: NUT_BG_H, boxShadow: "0 2px 3px rgba(0,0,0,0.5), 0 -1px 1px rgba(255,255,220,0.15)" }}
+      >
+        {/* Notch slot for each string — evenly spaced across the width */}
+        {strings.map((s, idx) => {
+          const cfg = STRING_CONFIGS[s]!;
+          const slotW = Math.max(2, cfg.size + 1.5);
+          const pct = ((idx + 0.5) / strings.length) * 100;
+          return (
+            <span
+              key={s}
+              className="absolute top-0 bottom-0 pointer-events-none"
+              style={{
+                left: `${pct}%`,
+                transform: "translateX(-50%)",
+                width: `${slotW}px`,
+                background: "rgba(4,2,0,0.6)",
+                borderRadius: "0 0 1px 1px",
+              }}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Portrait layout ─────────────────────────────────────────────────────────
-// Strings = columns (low E left → high e right), Frets = rows (nut top → 12 bottom)
+// Strings = columns (low E left → high e right)
+// Layout (top → bottom): string labels | open-string row | NUT BAR | frets 1–12
 
 interface LayoutProps {
   highlights: FretHighlight[];
@@ -261,7 +279,7 @@ function PortraitFretboard({ highlights, disabled, handleTap }: LayoutProps) {
       style={{ background: "linear-gradient(to right, #1c1409 0%, #2a1e0c 30%, #2e2210 50%, #2a1e0c 70%, #1c1409 100%)" }}
     >
       {/* String name labels */}
-      <div aria-hidden="true" className="flex mb-1 pt-1">
+      <div aria-hidden="true" className="flex pt-1 pb-0.5">
         <div className="w-7 shrink-0" />
         {STRINGS_PORTRAIT.map((s) => (
           <div key={s} className="flex-1 text-center text-[11px] font-semibold text-[#a89070]">
@@ -270,14 +288,35 @@ function PortraitFretboard({ highlights, disabled, handleTap }: LayoutProps) {
         ))}
       </div>
 
-      {FRETS.map((fret) => (
+      {/* Open string row (fret 0) — narrow, no fret number */}
+      <div role="row" className="flex">
+        <div aria-hidden="true" className="w-7 shrink-0 flex items-center justify-end pr-1 text-[10px] text-[#6a5030]/70">
+          ○
+        </div>
+        {STRINGS_PORTRAIT.map((string) => (
+          <FretCell
+            key={string}
+            string={string}
+            fret={0}
+            highlight={getHighlight(highlights, string, 0)}
+            disabled={disabled}
+            isPortrait={true}
+            handleTap={handleTap}
+            className="flex-1 h-8"
+          />
+        ))}
+      </div>
+
+      {/* Nut bar */}
+      <PortraitNutBar strings={STRINGS_PORTRAIT} />
+
+      {/* Fret rows 1–12 */}
+      {FRETS_MAIN.map((fret) => (
         <div key={fret}>
           <div role="row" className="flex">
-            {/* Fret number */}
             <div aria-hidden="true" className="w-7 shrink-0 flex items-center justify-center text-[11px] font-medium text-[#8a7050]">
-              {fret === 0 ? "" : fret}
+              {fret}
             </div>
-
             <div className="relative flex flex-1">
               {STRINGS_PORTRAIT.map((string) => (
                 <FretCell
@@ -286,14 +325,13 @@ function PortraitFretboard({ highlights, disabled, handleTap }: LayoutProps) {
                   fret={fret}
                   highlight={getHighlight(highlights, string, fret)}
                   disabled={disabled}
-                  isNut={fret === 0}
-                  nutEdge="top"
+                  isPortrait={true}
                   handleTap={handleTap}
-                  className="flex-1 h-12"
+                  className="flex-1 h-12 border-b border-b-[#7a6340]/60"
                 />
               ))}
 
-              {/* Inlay dots — pearl style */}
+              {/* Pearl inlay dots */}
               {SINGLE_DOT_FRETS.has(fret) && (
                 <span aria-hidden="true" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full pointer-events-none z-20"
                   style={{ background: "radial-gradient(circle at 35% 35%, #e0d8c8, #a89878)", boxShadow: "0 1px 3px rgba(0,0,0,0.6)" }} />
@@ -315,12 +353,12 @@ function PortraitFretboard({ highlights, disabled, handleTap }: LayoutProps) {
 }
 
 // ─── Landscape layout ────────────────────────────────────────────────────────
-// Strings = rows (low E top → high e bottom), Frets = columns (nut left → 12 right)
+// Strings = rows (high e top → low E bottom)
+// Layout (left → right): string label | open cell | NUT SEGMENT | frets 1–12
 
-// Pre-compute dot left positions as percentages of the fret-area width.
-// Fret columns are flex-1 across 13 slots (0–12), so each slot = 1/13 of the area.
+// Dot positions within the frets-1–12 area (12 equal columns, 0-indexed).
 const DOT_LEFT: Record<number, string> = Object.fromEntries(
-  FRETS.map((f) => [f, `${((f + 0.5) / 13) * 100}%`])
+  FRETS_MAIN.map((f) => [f, `${((f - 1 + 0.5) / 12) * 100}%`])
 );
 
 function LandscapeFretboard({ highlights, disabled, handleTap }: LayoutProps) {
@@ -333,15 +371,17 @@ function LandscapeFretboard({ highlights, disabled, handleTap }: LayoutProps) {
     >
       {/* Fret number header */}
       <div aria-hidden="true" className="flex pt-1 pb-0.5">
-        <div className="w-7 shrink-0" /> {/* spacer for string label column */}
-        {FRETS.map((fret) => (
+        <div className="w-7 shrink-0" />            {/* string label spacer */}
+        <div className="w-8 shrink-0 text-center text-[10px] text-[#6a5030]/70">○</div> {/* open col */}
+        <div className="w-2 shrink-0" />            {/* nut spacer */}
+        {FRETS_MAIN.map((fret) => (
           <div key={fret} className="flex-1 text-center text-[11px] font-medium text-[#8a7050]">
-            {fret === 0 ? "" : fret}
+            {fret}
           </div>
         ))}
       </div>
 
-      {/* String rows + inlay dot overlay */}
+      {/* String rows */}
       <div className="relative">
         {STRINGS_LANDSCAPE.map((string) => (
           <div key={string} role="row" className="flex items-center">
@@ -350,26 +390,39 @@ function LandscapeFretboard({ highlights, disabled, handleTap }: LayoutProps) {
               {STRING_NAMES[string]}
             </div>
 
-            <div className="flex flex-1">
-              {FRETS.map((fret) => (
-                <FretCell
-                  key={fret}
-                  string={string}
-                  fret={fret}
-                  highlight={getHighlight(highlights, string, fret)}
-                  disabled={disabled}
-                  isNut={fret === 0}
-                  nutEdge="left"
-                  handleTap={handleTap}
-                  className="flex-1 h-10 border-r border-r-[#7a6340]/40"
-                />
-              ))}
-            </div>
+            {/* Open string cell (fret 0) — narrow, no fret border */}
+            <FretCell
+              string={string}
+              fret={0}
+              highlight={getHighlight(highlights, string, 0)}
+              disabled={disabled}
+              isPortrait={false}
+              handleTap={handleTap}
+              className="w-8 shrink-0 h-10"
+            />
+
+            {/* Nut segment */}
+            <NutSegment stringNum={string} rowHeight="h-10" />
+
+            {/* Fret cells 1–12 */}
+            {FRETS_MAIN.map((fret) => (
+              <FretCell
+                key={fret}
+                string={string}
+                fret={fret}
+                highlight={getHighlight(highlights, string, fret)}
+                disabled={disabled}
+                isPortrait={false}
+                handleTap={handleTap}
+                className="flex-1 h-10 border-r border-r-[#7a6340]/40"
+              />
+            ))}
           </div>
         ))}
 
-        {/* Inlay dots — absolutely overlaid so they don't break the fret grid */}
-        <div aria-hidden="true" className="absolute left-7 right-0 top-0 bottom-0 pointer-events-none">
+        {/* Pearl inlay dots — overlaid on the frets-1–12 area only */}
+        <div aria-hidden="true" className="absolute top-0 bottom-0 pointer-events-none"
+          style={{ left: "calc(1.75rem + 2rem + 8px)", right: 0 }}>
           {[...SINGLE_DOT_FRETS].map((fret) => (
             <span
               key={fret}
@@ -382,25 +435,10 @@ function LandscapeFretboard({ highlights, disabled, handleTap }: LayoutProps) {
               }}
             />
           ))}
-          {/* Double dot at fret 12 */}
-          <span
-            className="absolute w-3.5 h-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
-            style={{
-              left: DOT_LEFT[12],
-              top: "33%",
-              background: "radial-gradient(circle at 35% 35%, #e0d8c8, #a89878)",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.7)",
-            }}
-          />
-          <span
-            className="absolute w-3.5 h-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
-            style={{
-              left: DOT_LEFT[12],
-              top: "67%",
-              background: "radial-gradient(circle at 35% 35%, #e0d8c8, #a89878)",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.7)",
-            }}
-          />
+          <span className="absolute w-3.5 h-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
+            style={{ left: DOT_LEFT[12], top: "33%", background: "radial-gradient(circle at 35% 35%, #e0d8c8, #a89878)", boxShadow: "0 1px 4px rgba(0,0,0,0.7)" }} />
+          <span className="absolute w-3.5 h-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
+            style={{ left: DOT_LEFT[12], top: "67%", background: "radial-gradient(circle at 35% 35%, #e0d8c8, #a89878)", boxShadow: "0 1px 4px rgba(0,0,0,0.7)" }} />
         </div>
       </div>
     </div>
