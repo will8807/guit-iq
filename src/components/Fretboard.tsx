@@ -68,17 +68,17 @@ const HIGHLIGHT_CLASSES: Record<HighlightVariant, string> = {
 //   - outer coloured halo glow
 const HIGHLIGHT_STYLES: Record<HighlightVariant, React.CSSProperties> = {
   correct: {
-    background: "radial-gradient(circle at 50% 50%, #0d2318 0%, #060d09 70%)",
+    background: "#0a1f11",
     border: "2.5px solid #22c55e",
     boxShadow: "0 0 12px 4px rgba(34,197,94,0.85), 0 0 4px 1px rgba(34,197,94,0.5), inset 0 0 6px rgba(34,197,94,0.2)",
   },
   incorrect: {
-    background: "radial-gradient(circle at 50% 50%, #2a0a0a 0%, #0d0404 70%)",
+    background: "#1f0a0a",
     border: "2.5px solid #ef4444",
     boxShadow: "0 0 12px 4px rgba(239,68,68,0.85), 0 0 4px 1px rgba(239,68,68,0.5), inset 0 0 6px rgba(239,68,68,0.2)",
   },
   hint: {
-    background: "radial-gradient(circle at 50% 50%, #1f1600 0%, #0c0900 70%)",
+    background: "#1a1200",
     border: "2.5px solid #eab308",
     boxShadow: "0 0 12px 4px rgba(234,179,8,0.85), 0 0 4px 1px rgba(234,179,8,0.5), inset 0 0 6px rgba(234,179,8,0.2)",
   },
