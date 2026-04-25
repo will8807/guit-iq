@@ -93,6 +93,79 @@ const PEARL_STYLE: React.CSSProperties = {
 /** Tailwind size classes for all inlay dots */
 const PEARL_SIZE = "w-5 h-5";
 
+// ─── Fretboard wood grain ─────────────────────────────────────────────────────
+// Real rosewood/ebony fretboards show fine grain lines running along the neck
+// length.  We stack three layers:
+//   1. A repeating narrow-stripe gradient for the primary grain lines
+//   2. A second repeating gradient at a slightly different period for secondary
+//      "pores" — gives the irregular feel real wood has
+//   3. The base edge-darkening gradient underneath
+
+/** Grain lines run top-to-bottom in portrait (along the neck length). */
+const GRAIN_V = [
+  // Primary grain lines — dark, spaced ~7-8 px
+  `repeating-linear-gradient(
+    to bottom,
+    transparent        0px,
+    transparent        5px,
+    rgba(0,0,0,0.22)   5px,
+    rgba(0,0,0,0.22)   6.5px,
+    transparent        6.5px,
+    transparent        11px,
+    rgba(0,0,0,0.10)   11px,
+    rgba(0,0,0,0.10)   12px,
+    transparent        12px,
+    transparent        17px,
+    rgba(180,110,30,0.09) 17px,
+    rgba(180,110,30,0.09) 18px
+  )`,
+  // Secondary pore lines — warm amber, slightly offset period
+  `repeating-linear-gradient(
+    to bottom,
+    transparent         0px,
+    transparent         9px,
+    rgba(140,80,20,0.13) 9px,
+    rgba(140,80,20,0.13) 10px,
+    transparent         10px,
+    transparent         23px,
+    rgba(0,0,0,0.09)    23px,
+    rgba(0,0,0,0.09)    24px
+  )`,
+  // Base edge-to-center darkening
+  `linear-gradient(to right, #160e04 0%, #231808 20%, #2e2210 50%, #231808 80%, #160e04 100%)`,
+].join(", ");
+
+/** Same grain rotated for landscape layout (runs left-to-right). */
+const GRAIN_H = [
+  `repeating-linear-gradient(
+    to right,
+    transparent        0px,
+    transparent        5px,
+    rgba(0,0,0,0.22)   5px,
+    rgba(0,0,0,0.22)   6.5px,
+    transparent        6.5px,
+    transparent        11px,
+    rgba(0,0,0,0.10)   11px,
+    rgba(0,0,0,0.10)   12px,
+    transparent        12px,
+    transparent        17px,
+    rgba(180,110,30,0.09) 17px,
+    rgba(180,110,30,0.09) 18px
+  )`,
+  `repeating-linear-gradient(
+    to right,
+    transparent         0px,
+    transparent         9px,
+    rgba(140,80,20,0.13) 9px,
+    rgba(140,80,20,0.13) 10px,
+    transparent         10px,
+    transparent         23px,
+    rgba(0,0,0,0.09)    23px,
+    rgba(0,0,0,0.09)    24px
+  )`,
+  `linear-gradient(to bottom, #160e04 0%, #231808 20%, #2e2210 50%, #231808 80%, #160e04 100%)`,
+].join(", ");
+
 // Per-string visual config.
 // Strings 1–2 are plain steel; 3–6 (G, D, A, E) are wound.
 const STRING_CONFIGS: Record<number, {
@@ -330,7 +403,7 @@ function PortraitFretboard({ highlights, disabled, handleTap }: LayoutProps) {
       role="grid"
       aria-label="Guitar fretboard"
       className="w-full select-none rounded-md overflow-hidden"
-      style={{ background: "linear-gradient(to right, #1c1409 0%, #2a1e0c 30%, #2e2210 50%, #2a1e0c 70%, #1c1409 100%)" }}
+      style={{ background: GRAIN_V }}
     >
       {/* String name labels */}
       <div aria-hidden="true" className="flex pt-1 pb-0.5">
@@ -421,7 +494,7 @@ function LandscapeFretboard({ highlights, disabled, handleTap }: LayoutProps) {
       role="grid"
       aria-label="Guitar fretboard"
       className="w-full select-none rounded-md overflow-hidden"
-      style={{ background: "linear-gradient(to bottom, #1c1409 0%, #2a1e0c 25%, #2e2210 50%, #2a1e0c 75%, #1c1409 100%)" }}
+      style={{ background: GRAIN_H }}
     >
       {/* Fret number header */}
       <div aria-hidden="true" className="flex pt-1 pb-0.5">
