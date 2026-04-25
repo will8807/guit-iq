@@ -70,6 +70,29 @@ const LABEL_CLASSES: Record<HighlightVariant, string> = {
 
 const SINGLE_DOT_FRETS = new Set([3, 5, 7, 9]);
 
+// ─── Pearl inlay style ────────────────────────────────────────────────────────
+// Mimics mother-of-pearl (MOP) with layered radial gradients:
+//   • bright white specular at top-left
+//   • cool teal iridescent shimmer at bottom-right
+//   • lavender shimmer at top-right
+//   • warm rosy pink shimmer at bottom-left
+//   • base creamy ivory to amber-brown underneath
+const PEARL_BG = [
+  "radial-gradient(ellipse at 22% 18%, rgba(255,255,255,0.92) 0%, transparent 38%)",
+  "radial-gradient(ellipse at 72% 78%, rgba(140,210,195,0.55) 0%, transparent 42%)",
+  "radial-gradient(ellipse at 80% 22%, rgba(210,175,240,0.45) 0%, transparent 40%)",
+  "radial-gradient(ellipse at 28% 78%, rgba(255,210,185,0.40) 0%, transparent 38%)",
+  "radial-gradient(circle at 50% 50%, #ddd5be 0%, #b09060 55%, #7a5c38 100%)",
+].join(", ");
+
+const PEARL_STYLE: React.CSSProperties = {
+  background: PEARL_BG,
+  boxShadow: "inset 0 1px 1px rgba(255,255,255,0.4), 0 1px 4px rgba(0,0,0,0.65)",
+};
+
+/** Tailwind size classes for all inlay dots */
+const PEARL_SIZE = "w-5 h-5";
+
 // Per-string visual config.
 // Strings 1–2 are plain steel; 3–6 (G, D, A, E) are wound.
 const STRING_CONFIGS: Record<number, {
@@ -364,15 +387,15 @@ function PortraitFretboard({ highlights, disabled, handleTap }: LayoutProps) {
 
               {/* Pearl inlay dots */}
               {SINGLE_DOT_FRETS.has(fret) && (
-                <span aria-hidden="true" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full pointer-events-none z-20"
-                  style={{ background: "radial-gradient(circle at 35% 35%, #e0d8c8, #a89878)", boxShadow: "0 1px 3px rgba(0,0,0,0.6)" }} />
+                <span aria-hidden="true" className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-20`}
+                  style={PEARL_STYLE} />
               )}
               {fret === 12 && (
                 <>
-                  <span aria-hidden="true" className="absolute left-1/3 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full pointer-events-none z-20"
-                    style={{ background: "radial-gradient(circle at 35% 35%, #e0d8c8, #a89878)", boxShadow: "0 1px 3px rgba(0,0,0,0.6)" }} />
-                  <span aria-hidden="true" className="absolute left-2/3 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full pointer-events-none z-20"
-                    style={{ background: "radial-gradient(circle at 35% 35%, #e0d8c8, #a89878)", boxShadow: "0 1px 3px rgba(0,0,0,0.6)" }} />
+                  <span aria-hidden="true" className={`absolute left-1/3 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-20`}
+                    style={PEARL_STYLE} />
+                  <span aria-hidden="true" className={`absolute left-2/3 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-20`}
+                    style={PEARL_STYLE} />
                 </>
               )}
             </div>
@@ -457,19 +480,18 @@ function LandscapeFretboard({ highlights, disabled, handleTap }: LayoutProps) {
           {[...SINGLE_DOT_FRETS].map((fret) => (
             <span
               key={fret}
-              className="absolute w-3.5 h-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
+              className={`absolute ${PEARL_SIZE} -translate-x-1/2 -translate-y-1/2 rounded-full`}
               style={{
                 left: DOT_LEFT[fret],
                 top: "50%",
-                background: "radial-gradient(circle at 35% 35%, #e0d8c8, #a89878)",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.7)",
+                ...PEARL_STYLE,
               }}
             />
           ))}
-          <span className="absolute w-3.5 h-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
-            style={{ left: DOT_LEFT[12], top: "33%", background: "radial-gradient(circle at 35% 35%, #e0d8c8, #a89878)", boxShadow: "0 1px 4px rgba(0,0,0,0.7)" }} />
-          <span className="absolute w-3.5 h-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
-            style={{ left: DOT_LEFT[12], top: "67%", background: "radial-gradient(circle at 35% 35%, #e0d8c8, #a89878)", boxShadow: "0 1px 4px rgba(0,0,0,0.7)" }} />
+          <span className={`absolute ${PEARL_SIZE} -translate-x-1/2 -translate-y-1/2 rounded-full`}
+            style={{ left: DOT_LEFT[12], top: "33%", ...PEARL_STYLE }} />
+          <span className={`absolute ${PEARL_SIZE} -translate-x-1/2 -translate-y-1/2 rounded-full`}
+            style={{ left: DOT_LEFT[12], top: "67%", ...PEARL_STYLE }} />
         </div>
       </div>
     </div>
