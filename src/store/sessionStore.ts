@@ -288,9 +288,11 @@ export const useSessionStore = create<SessionState>()(
             set({ intervalFirstTap: { string, fret }, intervalSecondTap: null, intervalSameStringHint: false });
             return;
           }
-          // Second tap: check for same-string correct pitch before accepting
+          // Second tap: if it matches either required pitch but is on the same string
+          // as the first tap, surface the hint and don't accept it.
           const tappedMidi = fretToMidi(string, fret);
-          if (tappedMidi === challenge.secondMidi && string === first.string) {
+          const matchesEitherPitch = tappedMidi === challenge.secondMidi || tappedMidi === challenge.rootMidi;
+          if (matchesEitherPitch && string === first.string) {
             // Right pitch, wrong string — surface hint, don't store as second tap
             set({ intervalSameStringHint: true });
             return;

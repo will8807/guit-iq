@@ -8,9 +8,9 @@
  * unless Show Root is enabled.
  *
  * For interval challenges, the prompt changes depending on which tap step
- * we are waiting for:
- *   Step 1 → "Tap the root note"
- *   Step 2 → "Now tap the second note"
+ * we are waiting for. Tap order does not matter — either note can go first:
+ *   Step 1 → "Tap the two notes of the interval"
+ *   Step 2 → "Now tap the other note"
  *
  * For chord challenges, the prompt shows:
  *   "Tap all chord tones" with a running tap counter badge.
@@ -84,7 +84,7 @@ function getPromptText(
   if (challengeType === "find-the-interval") {
     // Show Root ON: interval name provided, root is pre-filled — single tap
     if (intervalName) return `Find the ${intervalName}`;
-    return intervalStep === 1 ? "Tap the root note" : "Now tap the second note";
+    return intervalStep === 1 ? "Tap the two notes of the interval" : "Now tap the other note";
   }
   return "Find this note";
 }

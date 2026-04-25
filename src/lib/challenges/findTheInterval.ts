@@ -95,21 +95,33 @@ export function evaluateIntervalAnswer(challenge: IntervalChallenge, stringNum: 
 }
 
 /**
- * Evaluate a complete two-tap interval answer (root tap + second-note tap).
+ * Evaluate a complete two-tap interval answer. Tap order does not matter —
+ * whichever tap matches the challenge's rootMidi is treated as the root tap.
+ * If neither (or both) match the root pitch, tapA is treated as root for feedback.
  *
- * The root tap is considered correct if its pitch matches the challenge's rootMidi.
- * The second tap is correct if its pitch matches secondMidi.
+ * The root tap is correct when its pitch equals rootMidi.
+ * The second tap is correct when its pitch equals secondMidi AND it is on a
+ * different string from the root tap (real guitar constraint).
  * The overall result is correct only when BOTH taps are correct.
  *
  * @param challenge The active interval challenge
- * @param rootTap   The fretboard position the user tapped for the root note
- * @param secondTap The fretboard position the user tapped for the second note
+ * @param tapA      The first fretboard position tapped
+ * @param tapB      The second fretboard position tapped
  */
 export function evaluateTwoTapInterval(
   challenge: IntervalChallenge,
-  rootTap: { string: number; fret: number },
-  secondTap: { string: number; fret: number },
+  tapA: { string: number; fret: number },
+  tapB: { string: number; fret: number },
 ): EvaluationResult {
+  const midiA = fretToMidi(tapA.string, tapA.fret)
+  const midiB = fretToMidi(tapB.string, tapB.fret)
+
+  // Auto-detect which tap is root: if tapB matches rootMidi (and tapA doesn't), swap.
+  const aMatchesRoot = midiA === challenge.rootMidi
+  const bMatchesRoot = midiB === challenge.rootMidi
+  const rootTap = (bMatchesRoot && !aMatchesRoot) ? tapB : tapA
+  const secondTap = (bMatchesRoot && !aMatchesRoot) ? tapA : tapB
+
   const rootMidi = fretToMidi(rootTap.string, rootTap.fret)
   const secondMidi = fretToMidi(secondTap.string, secondTap.fret)
 
