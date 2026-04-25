@@ -480,7 +480,7 @@ function PortraitFretboard({ highlights, disabled, handleTap }: LayoutProps) {
 
           {/* Fret rows 1–12 */}
           {FRETS_MAIN.map((fret) => (
-            <div key={fret} role="row" className="relative flex border-b-2 border-b-[#a08858]/70">
+            <div key={fret} role="row" className="relative flex border-b-2 border-b-[#c8bfb0]/65">
               {STRINGS_PORTRAIT.map((string) => (
                 <FretCell
                   key={string}
@@ -584,7 +584,7 @@ function LandscapeFretboard({ highlights, disabled, handleTap }: LayoutProps) {
                 disabled={disabled}
                 isPortrait={false}
                 handleTap={handleTap}
-                className="flex-1 h-10 border-r-2 border-r-[#a08858]/60"
+                className="flex-1 h-10 border-r-2 border-r-[#c8bfb0]/55"
               />
             ))}
           </div>
