@@ -383,12 +383,11 @@ function NutSegment({ stringNum, rowHeight }: { stringNum: number; rowHeight: st
 
 function PortraitNutBar({ strings }: { strings: readonly number[] }) {
   return (
-    <div aria-hidden="true" className="flex">
-      <div className="w-7 shrink-0" />
-      <div
-        className="flex-1 relative"
-        style={{ height: "8px", background: NUT_BG_H, boxShadow: "0 2px 3px rgba(0,0,0,0.5), 0 -1px 1px rgba(255,255,220,0.15)" }}
-      >
+    <div
+      aria-hidden="true"
+      className="relative"
+      style={{ height: "8px", background: NUT_BG_H, boxShadow: "0 2px 3px rgba(0,0,0,0.5), 0 -1px 1px rgba(255,255,220,0.15)" }}
+    >
         {/* Notch slot for each string — evenly spaced across the width */}
         {strings.map((s, idx) => {
           const cfg = STRING_CONFIGS[s]!;
@@ -408,7 +407,6 @@ function PortraitNutBar({ strings }: { strings: readonly number[] }) {
             />
           );
         })}
-      </div>
     </div>
   );
 }
@@ -460,49 +458,58 @@ function PortraitFretboard({ highlights, disabled, handleTap }: LayoutProps) {
         ))}
       </div>
 
-      {/* Fretboard proper: nut + frets 1–12 — bounded by the nut edge, wood grain surface */}
-      <div style={{ background: GRAIN_V }}>
-        {/* Nut bar */}
-        <PortraitNutBar strings={STRINGS_PORTRAIT} />
-
-        {/* Fret rows 1–12 */}
-        {FRETS_MAIN.map((fret) => (
-          <div key={fret}>
-            <div role="row" className="flex">
-              <div aria-hidden="true" className="w-7 shrink-0 flex items-center justify-center text-[11px] font-medium text-[#8a7050]">
-                {fret}
-              </div>
-              <div className="relative flex flex-1">
-                {STRINGS_PORTRAIT.map((string) => (
-                  <FretCell
-                    key={string}
-                    string={string}
-                    fret={fret}
-                    highlight={getHighlight(highlights, string, fret)}
-                    disabled={disabled}
-                    isPortrait={true}
-                    handleTap={handleTap}
-                    className="flex-1 h-12 border-b border-b-[#7a6340]/60"
-                  />
-                ))}
-
-                {/* Pearl inlay dots */}
-                {SINGLE_DOT_FRETS.has(fret) && (
-                  <span aria-hidden="true" className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-20`}
-                    style={PEARL_STYLE} />
-                )}
-                {fret === 12 && (
-                  <>
-                    <span aria-hidden="true" className={`absolute left-1/3 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-20`}
-                      style={PEARL_STYLE} />
-                    <span aria-hidden="true" className={`absolute left-2/3 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-20`}
-                      style={PEARL_STYLE} />
-                  </>
-                )}
-              </div>
+      {/* Fretboard proper: two-column layout
+            Left  (w-7, dark surround): nut-height spacer + fret numbers
+            Right (flex-1, grain):      nut bar + fret cell rows              */}
+      <div className="flex">
+        {/* Dark gutter — fret number labels */}
+        <div aria-hidden="true" className="w-7 shrink-0">
+          {/* Spacer matching the nut bar height */}
+          <div style={{ height: "8px" }} />
+          {FRETS_MAIN.map((fret) => (
+            <div key={fret} className="h-12 flex items-center justify-center text-[11px] font-medium text-[#8a7050]">
+              {fret}
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+
+        {/* Grain surface — starts at the left edge of the nut */}
+        <div className="flex-1" style={{ background: GRAIN_V }}>
+          {/* Nut bar */}
+          <PortraitNutBar strings={STRINGS_PORTRAIT} />
+
+          {/* Fret rows 1–12 */}
+          {FRETS_MAIN.map((fret) => (
+            <div key={fret} role="row" className="relative flex border-b border-b-[#7a6340]/60">
+              {STRINGS_PORTRAIT.map((string) => (
+                <FretCell
+                  key={string}
+                  string={string}
+                  fret={fret}
+                  highlight={getHighlight(highlights, string, fret)}
+                  disabled={disabled}
+                  isPortrait={true}
+                  handleTap={handleTap}
+                  className="flex-1 h-12"
+                />
+              ))}
+
+              {/* Pearl inlay dots */}
+              {SINGLE_DOT_FRETS.has(fret) && (
+                <span aria-hidden="true" className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-20`}
+                  style={PEARL_STYLE} />
+              )}
+              {fret === 12 && (
+                <>
+                  <span aria-hidden="true" className={`absolute left-1/3 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-20`}
+                    style={PEARL_STYLE} />
+                  <span aria-hidden="true" className={`absolute left-2/3 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-20`}
+                    style={PEARL_STYLE} />
+                </>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
