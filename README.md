@@ -25,10 +25,10 @@ HEAR → LOCATE → PLAY → FEEDBACK → ADAPT
 ```
 
 ### 1. Hear
-The system plays a sound — a single guitar note, an interval (two notes), or a short melodic phrase — through your device's speaker using real guitar samples. A **Replay** button lets you hear the sound again (up to 3 times per challenge) before you answer.
+The system plays a sound — a single guitar note, an interval (two notes), or a short melodic phrase — through your device's speaker using real guitar samples. A **Replay** button lets you hear the sound again at any time before you answer.
 
 ### 2. Locate
-You listen, internalize what you heard, and figure out where it lives on the neck. No timer pressure — take the moment you need.
+You listen, internalize what you heard, and figure out where it lives on the neck. No timer pressure — take the time you need.
 
 ### 3. Play
 Tap the position on the interactive fretboard where you believe the sound is. The fretboard plays back the note you tapped so you immediately hear your own answer.
@@ -39,8 +39,8 @@ Tap the position on the interactive fretboard where you believe the sound is. Th
 ### 4. Feedback
 The game evaluates your answer instantly:
 
-- **Correct** — your tapped position glows green, a confirmation sound plays, and your score increments
-- **Incorrect** — your tapped position glows red, one correct position is revealed in blue, and the correct sound replays automatically so you hear what you missed
+- **Correct** — your tapped position glows green, a confirmation chime plays, and your score increments
+- **Incorrect** — your tapped position glows red, all valid positions are revealed on the fretboard, and a feedback chime plays so you can replay the sound and compare
 
 Because guitar has the same pitch at multiple positions, **all enharmonically equivalent fret positions are accepted** as correct.
 
@@ -50,11 +50,11 @@ After each challenge, the difficulty adjusts based on your rolling accuracy over
 - Note range (open position → full neck)
 - Challenge type (single notes → intervals)
 - Number of replays allowed
-- Inclusion of accidentals
+- Inclusion of accidentals (e.g. C♯, B♭, E♭)
 - Interval size range
 
 ### Show Root Mode
-An optional **Show Root** setting provides a visual anchor for users practicing without a guitar in hand. When enabled, the root note's string position is highlighted on the fretboard after the audio plays. When disabled, there are zero visual hints — pure ear training.
+An optional **Show Root** setting provides a visual anchor for users practicing without a guitar in hand. When enabled, the root note's string position is highlighted on the fretboard after the audio plays. When disabled (the default), there are zero visual hints — this mode is designed to be played with a guitar in hand, translating what you hear directly onto the real instrument.
 
 ### Sessions
 A session is 5–10 challenges. After the final challenge the session summary screen shows your score, accuracy, and streak. Progress is saved locally so you can see improvement over time.
