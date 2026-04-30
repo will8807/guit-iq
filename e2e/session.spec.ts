@@ -154,6 +154,21 @@ test.describe("Session flow", () => {
 test.describe("session completion", () => {
   test.beforeEach(async ({ page }) => {
     await stubAudio(page);
+    // Force only find-the-note challenges so a single fretboard tap always
+    // transitions to feedback (chord/interval challenges require multiple taps).
+    await page.addInitScript(() => {
+      const settings = {
+        state: {
+          showRoot: false,
+          sessionLength: 8,
+          intervalMix: 0,
+          chordMix: 0,
+          findAllMix: 0,
+        },
+        version: 0,
+      };
+      localStorage.setItem("guitiq-settings", JSON.stringify(settings));
+    });
   });
 
   /**
