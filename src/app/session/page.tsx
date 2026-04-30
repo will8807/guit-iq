@@ -114,6 +114,7 @@ export default function SessionPage() {
 
   // Reset hint level each time a new challenge starts
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHintLevel(0);
   }, [challenge]);
 
