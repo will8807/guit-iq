@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { stubAudio, stubSettings } from "./test-helpers";
 
 /**
  * M3.11 / M5.16 — Accessibility audit using axe-core
@@ -23,29 +24,11 @@ const AXE_OPTIONS = {
   },
 };
 
-async function stubAudio(page: import("@playwright/test").Page) {
-  await page.addInitScript(() => {
-    (window as unknown as Record<string, unknown>).__TONE_STUB__ = true;
-    const _originalFetch = window.fetch;
-    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = typeof input === "string" ? input : input.toString();
-      if (url.includes("midi-js-soundfonts") || url.includes(".mp3")) {
-        return new Response(new ArrayBuffer(0), { status: 200 });
-      }
-      return _originalFetch(input, init);
-    };
-    if (typeof AudioContext !== "undefined") {
-      const OrigAC = AudioContext;
-      (window as unknown as Record<string, unknown>).AudioContext = class extends OrigAC {
-        resume() { return Promise.resolve(); }
-      };
-    }
-  });
-}
-
 test.describe("Accessibility", () => {
   test.beforeEach(async ({ page }) => {
     await stubAudio(page);
+    // Force find-the-note only so a single tap always reaches feedback phase.
+    await stubSettings(page);
   });
 
   test("landing page has no axe violations", async ({ page }) => {
