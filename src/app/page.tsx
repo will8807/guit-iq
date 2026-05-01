@@ -61,7 +61,7 @@ export default function Home() {
 
       {/* Feature pills */}
       <div className="flex flex-wrap justify-center gap-2 max-w-xs">
-        {["🎵 Audio-first", "🎯 Find the note", "Chord training", "📈 Track progress"].map((f) => (
+        {["🎵 Audio-first", "🎯 Find the note", "🎸 Chord training", "📈 Track progress"].map((f) => (
           <span key={f} className="px-3 py-1.5 bg-zinc-800 rounded-full text-xs text-zinc-300 font-medium">
             {f}
           </span>
