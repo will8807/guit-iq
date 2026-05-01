@@ -155,8 +155,8 @@ describe("ChallengeFeedback", () => {
       correct: tapCorrectness.every(Boolean) && missedCount === 0,
       tapResults,
       missedPitchClasses,
-      rootPositions: [],
       chordLabel: "C Major",
+      pitchClassLabels: new Map(),
     };
     return {
       correct: chordResult.correct,

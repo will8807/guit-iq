@@ -49,7 +49,6 @@ describe("generateFindAllChallenge", () => {
     // Run many draws and expect at least one non-natural (pitch class not in natural set)
     const NATURAL_PCS = new Set([0, 2, 4, 5, 7, 9, 11]);
     const midiSet = new Set<number>();
-    let counter = 0;
     // Use a seeded deterministic rand that cycles to ensure we hit non-natural notes
     for (let i = 0; i < 200; i++) {
       const c = generateFindAllChallenge("hard", () => i / 200);

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { stubAudio, stubSettings } from "./test-helpers";
 
 /**
  * M5.15 — Progress persistence E2E
@@ -9,33 +10,7 @@ import { test, expect } from "@playwright/test";
  * load and AudioContext resolves instantly in headless Chrome.
  */
 
-async function stubAudio(page: import("@playwright/test").Page) {
-  await page.addInitScript(() => {
-    (window as unknown as Record<string, unknown>).__TONE_STUB__ = true;
-
-    const _originalFetch = window.fetch;
-    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = typeof input === "string" ? input : input.toString();
-      if (url.includes("midi-js-soundfonts") || url.includes(".mp3")) {
-        return new Response(new ArrayBuffer(0), { status: 200 });
-      }
-      return _originalFetch(input, init);
-    };
-
-    if (typeof AudioContext !== "undefined") {
-      const OrigAC = AudioContext;
-      (window as unknown as Record<string, unknown>).AudioContext = class extends OrigAC {
-        resume() {
-          return Promise.resolve();
-        }
-      };
-    }
-  });
-}
-
-/** Complete one challenge by tapping fret cells then Next →
- * Handles both note (1-tap) and interval (2-tap) challenges.
- */
+/** Complete one challenge by tapping a fret cell then Next → */
 async function completeOneChallenge(page: import("@playwright/test").Page) {
   const firstCell = page.getByRole("gridcell").first();
   await expect(firstCell).not.toHaveAttribute("aria-disabled", "true", {
@@ -43,16 +18,7 @@ async function completeOneChallenge(page: import("@playwright/test").Page) {
   });
   await firstCell.click();
 
-  // For interval challenges the first tap locks in the root; a second tap is needed.
-  // Check whether feedback appeared; if not, do a second tap.
   const feedbackLocator = page.getByText(/correct!/i).or(page.getByText(/not quite/i));
-  const feedbackVisible = await feedbackLocator.isVisible().catch(() => false);
-  if (!feedbackVisible) {
-    // Second tap for interval challenge (tap a different cell so the store records it)
-    const secondCell = page.getByRole("gridcell").nth(10);
-    await secondCell.click();
-  }
-
   await expect(feedbackLocator).toBeVisible({ timeout: 5000 });
   await page.getByRole("button", { name: "Next →" }).click();
 }
@@ -60,6 +26,10 @@ async function completeOneChallenge(page: import("@playwright/test").Page) {
 test.describe("M5.15 — Progress screen updated after session", () => {
   test.beforeEach(async ({ page }) => {
     await stubAudio(page);
+    // Force find-the-note only so a single fretboard tap always yields feedback.
+    // addInitScript fires on every navigation, so this re-applies after the
+    // localStorage.clear() below whenever the test navigates to /session.
+    await stubSettings(page);
     // Navigate first, then clear localStorage so we start clean but
     // don't wipe data on subsequent navigations within the test.
     await page.goto("/");

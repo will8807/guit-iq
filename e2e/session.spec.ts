@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { stubAudio, stubSettings } from "./test-helpers";
 
 /**
  * M3.10 — Session flow E2E
@@ -29,36 +30,10 @@ import { test, expect } from "@playwright/test";
  *   3. Proceed through the challenge UI — the fretboard tap is the real user gesture
  */
 
-// Inject audio stubs before page JS runs
-async function stubAudio(page: import("@playwright/test").Page) {
-  await page.addInitScript(() => {
-    // Stub Tone.js so the sampler never tries to fetch remote audio files
-    (window as unknown as Record<string, unknown>).__TONE_STUB__ = true;
-
-    // Override fetch for audio sample CDN requests
-    const _originalFetch = window.fetch;
-    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = typeof input === "string" ? input : input.toString();
-      if (url.includes("midi-js-soundfonts") || url.includes(".mp3")) {
-        // Return an empty successful response so the sampler "loads" instantly
-        return new Response(new ArrayBuffer(0), { status: 200 });
-      }
-      return _originalFetch(input, init);
-    };
-
-    // Stub AudioContext to avoid Web Audio errors in headless
-    if (typeof AudioContext !== "undefined") {
-      const OrigAC = AudioContext;
-      (window as unknown as Record<string, unknown>).AudioContext = class extends OrigAC {
-        resume() { return Promise.resolve(); }
-      };
-    }
-  });
-}
-
 test.describe("Session flow", () => {
   test.beforeEach(async ({ page }) => {
     await stubAudio(page);
+    await stubSettings(page);
   });
 
   test("landing page has Start Training link", async ({ page }) => {
@@ -154,6 +129,7 @@ test.describe("Session flow", () => {
 test.describe("session completion", () => {
   test.beforeEach(async ({ page }) => {
     await stubAudio(page);
+    await stubSettings(page);
   });
 
   /**
