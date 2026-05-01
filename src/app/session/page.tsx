@@ -62,8 +62,9 @@ export default function SessionPage() {
   function getChallengeNotes(c: Challenge): string[] {
     if (c.type === "find-the-note") return [c.targetNote];
     if (c.type === "find-the-interval") return [c.rootNote, c.secondNote];
-    // Chord: map midi numbers to note names for arpeggio playback
-    return c.midiNotes.map((m) => midiToNote(m));
+    if (c.type === "find-the-chord") return c.midiNotes.map((m) => midiToNote(m));
+    // find-all-positions: play the single target note
+    return [c.targetNote];
   }
 
   const playChallenge = useCallback(async () => {
