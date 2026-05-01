@@ -23,6 +23,7 @@
  * Fret numbering:   0 = open string, 12 = 12th fret
  */
 
+import { useState, useRef } from "react";
 import { getNoteAtPosition, type FretPosition } from "@/lib/music/fretboard";
 import { playNote, isAudioReady } from "@/lib/audio/engine";
 import type { FretboardLayout } from "@/hooks/useOrientation";
@@ -50,7 +51,8 @@ interface FretboardProps {
 const STRINGS_PORTRAIT = [6, 5, 4, 3, 2, 1] as const;
 // Landscape: strings as rows top→bottom (high e first, low E at bottom)
 const STRINGS_LANDSCAPE = [1, 2, 3, 4, 5, 6] as const;
-const FRETS = Array.from({ length: 13 }, (_, i) => i); // 0–12
+/** Frets in the main playable grid (right of the nut). Fret 0 = open string, rendered separately. */
+const FRETS_MAIN = Array.from({ length: 12 }, (_, i) => i + 1); // 1–12
 
 const STRING_NAMES: Record<number, string> = { 1: "e", 2: "B", 3: "G", 4: "D", 5: "A", 6: "E" };
 
@@ -60,33 +62,193 @@ const HIGHLIGHT_CLASSES: Record<HighlightVariant, string> = {
   hint: "bg-yellow-400",
 };
 
+// Dark-fill ring style matching the reference design:
+//   - near-black interior with a faint inner glow
+//   - vivid coloured border ring
+//   - outer coloured halo glow
+// Note dot style — matches the correct/incorrect badge style from ChallengeFeedback:
+//   bg-green-800/60 border-green-600 | bg-red-900/60 border-red-600 | bg-amber-900/60 border-amber-500
+const HIGHLIGHT_STYLES: Record<HighlightVariant, React.CSSProperties> = {
+  correct: {
+    background: "#166534",                    // green-800 solid
+    border: "1.5px solid #16a34a",
+    boxShadow: "0 0 8px 2px rgba(22,163,74,0.5)",
+  },
+  incorrect: {
+    background: "#7f1d1d",                    // red-900 solid
+    border: "1.5px solid #dc2626",
+    boxShadow: "0 0 8px 2px rgba(220,38,38,0.5)",
+  },
+  hint: {
+    background: "#78350f",                    // amber-900 solid
+    border: "1.5px solid #d97706",
+    boxShadow: "0 0 8px 2px rgba(217,119,6,0.5)",
+  },
+};
+
 const LABEL_CLASSES: Record<HighlightVariant, string> = {
-  correct: "text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]",
-  incorrect: "text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]",
-  hint: "text-zinc-900",
+  correct: "text-green-300 font-semibold",
+  incorrect: "text-red-300 font-semibold",
+  hint: "text-amber-300 font-semibold",
 };
 
 const SINGLE_DOT_FRETS = new Set([3, 5, 7, 9]);
 
-// Realistic string thicknesses: string 6 (low E) is thickest, string 1 (high e) thinnest.
-// Portrait layout: string line is vertical (width varies).
-const STRING_LINE_PORTRAIT: Record<number, string> = {
-  1: "before:absolute before:left-1/2 before:-translate-x-1/2 before:inset-y-0 before:w-px   before:bg-zinc-500",
-  2: "before:absolute before:left-1/2 before:-translate-x-1/2 before:inset-y-0 before:w-px   before:bg-zinc-500",
-  3: "before:absolute before:left-1/2 before:-translate-x-1/2 before:inset-y-0 before:w-[1.5px] before:bg-zinc-400",
-  4: "before:absolute before:left-1/2 before:-translate-x-1/2 before:inset-y-0 before:w-[2px]  before:bg-zinc-400",
-  5: "before:absolute before:left-1/2 before:-translate-x-1/2 before:inset-y-0 before:w-[2.5px] before:bg-zinc-400",
-  6: "before:absolute before:left-1/2 before:-translate-x-1/2 before:inset-y-0 before:w-[3px]  before:bg-zinc-300",
+// ─── Pearl inlay style ────────────────────────────────────────────────────────
+// Mimics mother-of-pearl (MOP) with layered radial gradients:
+//   • bright white specular at top-left
+//   • cool teal iridescent shimmer at bottom-right
+//   • lavender shimmer at top-right
+//   • warm rosy pink shimmer at bottom-left
+//   • base creamy ivory to amber-brown underneath
+const PEARL_BG = [
+  "radial-gradient(ellipse at 22% 18%, rgba(255,255,255,0.92) 0%, transparent 38%)",
+  "radial-gradient(ellipse at 72% 78%, rgba(140,210,195,0.55) 0%, transparent 42%)",
+  "radial-gradient(ellipse at 80% 22%, rgba(210,175,240,0.45) 0%, transparent 40%)",
+  "radial-gradient(ellipse at 28% 78%, rgba(255,210,185,0.40) 0%, transparent 38%)",
+  "radial-gradient(circle at 50% 50%, #ddd5be 0%, #b09060 55%, #7a5c38 100%)",
+].join(", ");
+
+const PEARL_STYLE: React.CSSProperties = {
+  background: PEARL_BG,
+  boxShadow: "inset 0 1px 1px rgba(255,255,255,0.4), 0 1px 4px rgba(0,0,0,0.65)",
 };
-// Landscape layout: string line is horizontal (height varies).
-const STRING_LINE_LANDSCAPE: Record<number, string> = {
-  1: "before:absolute before:top-1/2 before:-translate-y-1/2 before:inset-x-0 before:h-px   before:bg-zinc-500",
-  2: "before:absolute before:top-1/2 before:-translate-y-1/2 before:inset-x-0 before:h-px   before:bg-zinc-500",
-  3: "before:absolute before:top-1/2 before:-translate-y-1/2 before:inset-x-0 before:h-[1.5px] before:bg-zinc-400",
-  4: "before:absolute before:top-1/2 before:-translate-y-1/2 before:inset-x-0 before:h-[2px]  before:bg-zinc-400",
-  5: "before:absolute before:top-1/2 before:-translate-y-1/2 before:inset-x-0 before:h-[2.5px] before:bg-zinc-400",
-  6: "before:absolute before:top-1/2 before:-translate-y-1/2 before:inset-x-0 before:h-[3px]  before:bg-zinc-300",
+
+/** Tailwind size classes for all inlay dots */
+const PEARL_SIZE = "w-5 h-5";
+
+// ─── Fretboard wood grain ─────────────────────────────────────────────────────
+// Real rosewood/ebony fretboards show fine grain lines running along the neck
+// length.  We stack three layers:
+//   1. A repeating narrow-stripe gradient for the primary grain lines
+//   2. A second repeating gradient at a slightly different period for secondary
+//      "pores" — gives the irregular feel real wood has
+//   3. The base edge-darkening gradient underneath
+
+// Dark gradient for the area surrounding the fretboard (behind labels, open-string zone)
+const DARK_BG = "linear-gradient(to bottom, #0c0906 0%, #181208 50%, #0c0906 100%)";
+
+/** Grain lines follow the neck length in portrait (vertical stripes → gradient goes `to right`). */
+const GRAIN_V = [
+  // Primary grain lines — dark, spaced ~7-8 px
+  `repeating-linear-gradient(
+    to right,
+    transparent        0px,
+    transparent        5px,
+    rgba(0,0,0,0.22)   5px,
+    rgba(0,0,0,0.22)   6.5px,
+    transparent        6.5px,
+    transparent        11px,
+    rgba(0,0,0,0.10)   11px,
+    rgba(0,0,0,0.10)   12px,
+    transparent        12px,
+    transparent        17px,
+    rgba(180,110,30,0.09) 17px,
+    rgba(180,110,30,0.09) 18px
+  )`,
+  // Secondary pore lines — warm amber, slightly offset period
+  `repeating-linear-gradient(
+    to right,
+    transparent         0px,
+    transparent         9px,
+    rgba(140,80,20,0.13) 9px,
+    rgba(140,80,20,0.13) 10px,
+    transparent         10px,
+    transparent         23px,
+    rgba(0,0,0,0.09)    23px,
+    rgba(0,0,0,0.09)    24px
+  )`,
+  // Base edge-to-center darkening (edges of the neck board, left/right)
+  `linear-gradient(to right, #160e04 0%, #231808 20%, #2e2210 50%, #231808 80%, #160e04 100%)`,
+].join(", ");
+
+/** Grain lines follow the neck length in landscape (horizontal stripes → gradient goes `to bottom`). */
+const GRAIN_H = [
+  `repeating-linear-gradient(
+    to bottom,
+    transparent        0px,
+    transparent        5px,
+    rgba(0,0,0,0.22)   5px,
+    rgba(0,0,0,0.22)   6.5px,
+    transparent        6.5px,
+    transparent        11px,
+    rgba(0,0,0,0.10)   11px,
+    rgba(0,0,0,0.10)   12px,
+    transparent        12px,
+    transparent        17px,
+    rgba(180,110,30,0.09) 17px,
+    rgba(180,110,30,0.09) 18px
+  )`,
+  `repeating-linear-gradient(
+    to bottom,
+    transparent         0px,
+    transparent         9px,
+    rgba(140,80,20,0.13) 9px,
+    rgba(140,80,20,0.13) 10px,
+    transparent         10px,
+    transparent         23px,
+    rgba(0,0,0,0.09)    23px,
+    rgba(0,0,0,0.09)    24px
+  )`,
+  `linear-gradient(to bottom, #160e04 0%, #231808 20%, #2e2210 50%, #231808 80%, #160e04 100%)`,
+].join(", ");
+
+// Per-string visual config.
+// Strings 1–2 are plain steel; 3–6 (G, D, A, E) are wound.
+const STRING_CONFIGS: Record<number, {
+  isWound: boolean;
+  size: number;   // px — used as width (portrait) or height (landscape)
+  color: string;
+}> = {
+  1: { isWound: false, size: 1,   color: "#9ca3af" },
+  2: { isWound: false, size: 1,   color: "#9ca3af" },
+  3: { isWound: true,  size: 2,   color: "#b0a898" },
+  4: { isWound: true,  size: 2.5, color: "#b8b090" },
+  5: { isWound: true,  size: 3,   color: "#c0b07a" },
+  6: { isWound: true,  size: 3.5, color: "#c8b86a" },
 };
+
+// ─── String line element ────────────────────────────────────────────────────
+// Renders as an absolutely-positioned span inside a FretCell.
+// Wound strings get a repeating diagonal gradient to mimic the helical winding.
+
+function StringLine({ stringNum, isPortrait, ref }: { stringNum: number; isPortrait: boolean; ref?: React.Ref<HTMLSpanElement> }) {
+  const cfg = STRING_CONFIGS[stringNum];
+  if (!cfg) return null;
+
+  // Diagonal winding pattern — direction flips between orientations so the
+  // helical angle always looks consistent.
+  const woundGradient = `repeating-linear-gradient(
+    ${isPortrait ? "-45deg" : "45deg"},
+    transparent 0px, transparent 1.5px,
+    rgba(0,0,0,0.28) 1.5px, rgba(0,0,0,0.28) 2.5px
+  )`;
+
+  // Subtle highlight edge to give the string a cylindrical feel.
+  const woundShadow = isPortrait
+    ? "1px 0 0 rgba(255,255,255,0.13), -1px 0 0 rgba(0,0,0,0.38)"
+    : "0 -1px 0 rgba(255,255,255,0.13), 0 1px 0 rgba(0,0,0,0.38)";
+
+  const style: React.CSSProperties = isPortrait
+    ? {
+        top: 0, bottom: 0,
+        left: "50%", transform: "translateX(-50%)",
+        width: `${cfg.size}px`,
+        backgroundColor: cfg.color,
+        backgroundImage: cfg.isWound ? woundGradient : undefined,
+        boxShadow: cfg.isWound ? woundShadow : undefined,
+      }
+    : {
+        left: 0, right: 0,
+        top: "50%", transform: "translateY(-50%)",
+        height: `${cfg.size}px`,
+        backgroundColor: cfg.color,
+        backgroundImage: cfg.isWound ? woundGradient : undefined,
+        boxShadow: cfg.isWound ? woundShadow : undefined,
+      };
+
+  return <span ref={ref} aria-hidden="true" data-string={stringNum} className="absolute pointer-events-none z-0" style={style} />;
+}
 
 function getHighlight(
   highlights: FretHighlight[],
@@ -124,55 +286,142 @@ interface CellProps {
   fret: number;
   highlight: FretHighlight | undefined;
   disabled: boolean;
-  isNut: boolean;
-  nutEdge: "top" | "left";
+  isPortrait: boolean;
   handleTap: (string: number, fret: number) => void;
   className?: string;
 }
 
-function FretCell({ string, fret, highlight, disabled, isNut, nutEdge, handleTap, className = "" }: CellProps) {
-  const nutClass = nutEdge === "top"
-    ? (isNut ? "border-b-4 border-b-zinc-300" : "border-b border-b-zinc-600")
-    : (isNut ? "border-l-4 border-l-zinc-300" : "border-l border-l-zinc-600");
+function FretCell({ string, fret, highlight, disabled, isPortrait, handleTap, className = "" }: CellProps) {
+  const [ripplePos, setRipplePos] = useState<{ x: number; y: number } | null>(null);
+  const [pressing, setPressing] = useState(false);
+  const stringRef = useRef<HTMLSpanElement>(null);
 
-  // String line: thickness and colour vary per string for realism
-  const stringLineClass = nutEdge === "top"
-    ? (STRING_LINE_PORTRAIT[string] ?? STRING_LINE_PORTRAIT[1]!)
-    : (STRING_LINE_LANDSCAPE[string] ?? STRING_LINE_LANDSCAPE[1]!);
+  function handleClick(e: React.MouseEvent<HTMLButtonElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setRipplePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    setPressing(true);
+    // animate every segment of this string across the whole fretboard
+    const cls = isPortrait ? "string-pluck-v" : "string-pluck-h";
+    const grid = e.currentTarget.closest('[role="grid"]');
+    const allSegments = grid
+      ? Array.from(grid.querySelectorAll<HTMLSpanElement>(`[data-string="${string}"]`))
+      : stringRef.current ? [stringRef.current] : [];
+    allSegments.forEach((seg) => {
+      seg.classList.remove(cls);
+      void seg.offsetWidth; // force reflow per segment
+      seg.classList.add(cls);
+    });
+    handleTap(string, fret);
+    setTimeout(() => setPressing(false), 80);
+  }
 
   return (
-    <button
-      role="gridcell"
-      aria-label={`String ${string}, fret ${fret}`}
-      aria-disabled={disabled}
-      onClick={() => handleTap(string, fret)}
-      className={[
-        "relative flex items-center justify-center",
-        highlight ? "" : stringLineClass,
-        nutClass,
-        highlight ? "" : "hover:bg-zinc-700 active:bg-zinc-600",
-        disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
-        className,
-      ].join(" ")}
-    >
+    <div className={["relative", className].join(" ")}>
+      <button
+        role="gridcell"
+        aria-label={`String ${string}, fret ${fret}`}
+        aria-disabled={disabled}
+        onClick={handleClick}
+        className={[
+          "w-full h-full flex items-center justify-center overflow-hidden",
+          "transition-transform duration-75",
+          pressing ? "scale-[0.91]" : "scale-100",
+          highlight ? "" : "hover:bg-[#3d2e1a]/50 active:bg-[#4a3820]/60",
+          disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
+        ].join(" ")}
+      >
+        {/* String always visible */}
+        <StringLine stringNum={string} isPortrait={isPortrait} ref={stringRef} />
+        {ripplePos && (
+          <span
+            aria-hidden="true"
+            className="fret-ripple"
+            style={{ left: ripplePos.x, top: ripplePos.y }}
+            onAnimationEnd={() => setRipplePos(null)}
+          />
+        )}
+      </button>
+      {/* Highlight dot rendered outside the button so overflow-hidden doesn't composite it */}
       {highlight && (
         <span
           aria-hidden="true"
-          className={`w-8 h-8 rounded-full z-10 flex items-center justify-center ${HIGHLIGHT_CLASSES[highlight.variant]}`}
+          data-variant={highlight.variant}
+          data-label={highlight.label}
+          className="absolute inset-0 m-auto w-9 h-9 rounded-full z-30 flex items-center justify-center pointer-events-none"
+          style={HIGHLIGHT_STYLES[highlight.variant]}
         >
           {highlight.label && (
-            <span className={`text-[11px] font-black leading-none select-none ${LABEL_CLASSES[highlight.variant]}`}>
+            <span className={`text-[12px] font-black leading-none select-none tracking-tight ${LABEL_CLASSES[highlight.variant]}`}>
               {highlight.label}
             </span>
           )}
         </span>
       )}
-    </button>
+    </div>
+  );
+}
+
+// ─── Nut bar segments ───────────────────────────────────────────────────────
+// NutSegment: one ivory column-slice per string row in landscape layout.
+// PortraitNutBar: full-width ivory row in portrait layout.
+// Both render the string continuing through the nut and a dark notch slot.
+
+const NUT_BG = "linear-gradient(to right, #ede5c0 0%, #d4b458 35%, #c0982a 50%, #d4b458 65%, #ede5c0 100%)";
+const NUT_BG_H = "linear-gradient(to bottom, #ede5c0 0%, #d4b458 35%, #c0982a 50%, #d4b458 65%, #ede5c0 100%)";
+
+function NutSegment({ stringNum, rowHeight }: { stringNum: number; rowHeight: string }) {
+  const cfg = STRING_CONFIGS[stringNum]!;
+  const slotH = Math.max(2, cfg.size + 1.5);
+  return (
+    <div
+      aria-hidden="true"
+      className={`flex-shrink-0 relative ${rowHeight}`}
+      style={{ width: "8px", background: NUT_BG, boxShadow: "1px 0 3px rgba(0,0,0,0.5), -1px 0 1px rgba(255,255,220,0.15)" }}
+    >
+      {/* String continues through the nut */}
+      <StringLine stringNum={stringNum} isPortrait={false} />
+      {/* Notch slot */}
+      <span
+        className="absolute top-1/2 -translate-y-1/2 inset-x-0 pointer-events-none z-10"
+        style={{ height: `${slotH}px`, background: "rgba(4,2,0,0.6)", borderRadius: "0 1px 1px 0" }}
+      />
+    </div>
+  );
+}
+
+function PortraitNutBar({ strings }: { strings: readonly number[] }) {
+  return (
+    <div
+      aria-hidden="true"
+      className="relative"
+      style={{ height: "8px", background: NUT_BG_H, boxShadow: "0 2px 3px rgba(0,0,0,0.5), 0 -1px 1px rgba(255,255,220,0.15)" }}
+    >
+        {/* Notch slot for each string — evenly spaced across the width */}
+        {strings.map((s, idx) => {
+          const cfg = STRING_CONFIGS[s]!;
+          const slotW = Math.max(2, cfg.size + 1.5);
+          const pct = ((idx + 0.5) / strings.length) * 100;
+          return (
+            <span
+              key={s}
+              className="absolute top-0 bottom-0 pointer-events-none"
+              style={{
+                left: `${pct}%`,
+                transform: "translateX(-50%)",
+                width: `${slotW}px`,
+                background: "rgba(4,2,0,0.6)",
+                borderRadius: "0 0 1px 1px",
+              }}
+            />
+          );
+        })}
+    </div>
   );
 }
 
 // ─── Portrait layout ─────────────────────────────────────────────────────────
-// Strings = columns (low E left → high e right), Frets = rows (nut top → 12 bottom)
+// Strings = columns (low E left → high e right)
+// Layout (top → bottom): string labels | open-string row | NUT BAR | frets 1–12
 
 interface LayoutProps {
   highlights: FretHighlight[];
@@ -182,26 +431,64 @@ interface LayoutProps {
 
 function PortraitFretboard({ highlights, disabled, handleTap }: LayoutProps) {
   return (
-    <div role="grid" aria-label="Guitar fretboard" className="w-full select-none">
-      {/* String name labels */}
-      <div aria-hidden="true" className="flex mb-1">
-        <div className="w-6 shrink-0" />
+    <div
+      role="grid"
+      aria-label="Guitar fretboard"
+      className="w-full select-none rounded-md overflow-hidden"
+      style={{ background: DARK_BG }}
+    >
+      {/* String name labels — sit on the dark surround, above the fretboard */}
+      <div aria-hidden="true" className="flex pt-1 pb-0.5">
+        <div className="w-7 shrink-0" />
         {STRINGS_PORTRAIT.map((s) => (
-          <div key={s} className="flex-1 text-center text-[10px] text-zinc-500">
+          <div key={s} className="flex-1 text-center text-[11px] font-semibold text-[#a89070]">
             {STRING_NAMES[s]}
           </div>
         ))}
       </div>
 
-      {FRETS.map((fret) => (
-        <div key={fret}>
-          <div role="row" className="flex">
-            {/* Fret number */}
-            <div aria-hidden="true" className="w-6 shrink-0 flex items-center justify-center text-[10px] text-zinc-500">
-              {fret === 0 ? "" : fret}
-            </div>
+      {/* Open string row — above the nut, on the dark surround */}
+      <div role="row" className="flex">
+        <div aria-hidden="true" className="w-7 shrink-0 flex items-center justify-end pr-1 text-[10px] text-[#6a5030]/70">
+          ○
+        </div>
+        {STRINGS_PORTRAIT.map((string) => (
+          <FretCell
+            key={string}
+            string={string}
+            fret={0}
+            highlight={getHighlight(highlights, string, 0)}
+            disabled={disabled}
+            isPortrait={true}
+            handleTap={handleTap}
+            className="flex-1 h-8"
+          />
+        ))}
+      </div>
 
-            <div className="relative flex flex-1">
+      {/* Fretboard proper: two-column layout
+            Left  (w-7, dark surround): nut-height spacer + fret numbers
+            Right (flex-1, grain):      nut bar + fret cell rows              */}
+      <div className="flex">
+        {/* Dark gutter — fret number labels */}
+        <div aria-hidden="true" className="w-7 shrink-0">
+          {/* Spacer matching the nut bar height */}
+          <div style={{ height: "8px" }} />
+          {FRETS_MAIN.map((fret) => (
+            <div key={fret} className="h-12 flex items-center justify-center text-[11px] font-medium text-[#8a7050]">
+              {fret}
+            </div>
+          ))}
+        </div>
+
+        {/* Grain surface — starts at the left edge of the nut */}
+        <div className="flex-1" style={{ background: GRAIN_V }}>
+          {/* Nut bar */}
+          <PortraitNutBar strings={STRINGS_PORTRAIT} />
+
+          {/* Fret rows 1–12 */}
+          {FRETS_MAIN.map((fret) => (
+            <div key={fret} role="row" className="relative flex border-b-2 border-b-[#c8bfb0]/65">
               {STRINGS_PORTRAIT.map((string) => (
                 <FretCell
                   key={string}
@@ -209,99 +496,128 @@ function PortraitFretboard({ highlights, disabled, handleTap }: LayoutProps) {
                   fret={fret}
                   highlight={getHighlight(highlights, string, fret)}
                   disabled={disabled}
-                  isNut={fret === 0}
-                  nutEdge="top"
+                  isPortrait={true}
                   handleTap={handleTap}
                   className="flex-1 h-12"
                 />
               ))}
 
-              {/* Inlay dots */}
+              {/* Pearl inlay dots */}
               {SINGLE_DOT_FRETS.has(fret) && (
-                <span aria-hidden="true" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-zinc-400 pointer-events-none z-20" />
+                <span aria-hidden="true" className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-10`}
+                  style={PEARL_STYLE} />
               )}
               {fret === 12 && (
                 <>
-                  <span aria-hidden="true" className="absolute left-1/3 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-zinc-400 pointer-events-none z-20" />
-                  <span aria-hidden="true" className="absolute left-2/3 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-zinc-400 pointer-events-none z-20" />
+                  <span aria-hidden="true" className={`absolute left-1/3 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-10`}
+                    style={PEARL_STYLE} />
+                  <span aria-hidden="true" className={`absolute left-2/3 top-1/2 -translate-x-1/2 -translate-y-1/2 ${PEARL_SIZE} rounded-full pointer-events-none z-10`}
+                    style={PEARL_STYLE} />
                 </>
               )}
             </div>
-          </div>
+          ))}
         </div>
-      ))}
+      </div>
     </div>
   );
 }
 
 // ─── Landscape layout ────────────────────────────────────────────────────────
-// Strings = rows (low E top → high e bottom), Frets = columns (nut left → 12 right)
+// Strings = rows (high e top → low E bottom)
+// Layout (left → right): string label | open cell | NUT SEGMENT | frets 1–12
 
-// Pre-compute dot left positions as percentages of the fret-area width.
-// Fret columns are flex-1 across 13 slots (0–12), so each slot = 1/13 of the area.
+// Dot positions within the frets-1–12 area (12 equal columns, 0-indexed).
 const DOT_LEFT: Record<number, string> = Object.fromEntries(
-  FRETS.map((f) => [f, `${((f + 0.5) / 13) * 100}%`])
+  FRETS_MAIN.map((f) => [f, `${((f - 1 + 0.5) / 12) * 100}%`])
 );
 
 function LandscapeFretboard({ highlights, disabled, handleTap }: LayoutProps) {
   return (
-    <div role="grid" aria-label="Guitar fretboard" className="w-full select-none">
-      {/* Fret number header */}
-      <div aria-hidden="true" className="flex mb-1">
-        <div className="w-6 shrink-0" /> {/* spacer for string label column */}
-        {FRETS.map((fret) => (
-          <div key={fret} className="flex-1 text-center text-[10px] text-zinc-500">
-            {fret === 0 ? "" : fret}
+    <div
+      role="grid"
+      aria-label="Guitar fretboard"
+      className="w-full select-none rounded-md overflow-hidden"
+      style={{ background: DARK_BG }}
+    >
+      {/* Fret number header — sits on the dark surround */}
+      <div aria-hidden="true" className="flex pt-1 pb-0.5">
+        <div className="w-7 shrink-0" />            {/* string label spacer */}
+        <div className="w-8 shrink-0 text-center text-[10px] text-[#6a5030]/70">○</div> {/* open col */}
+        <div className="w-2 shrink-0" />            {/* nut spacer */}
+        {FRETS_MAIN.map((fret) => (
+          <div key={fret} className="flex-1 text-center text-[11px] font-medium text-[#8a7050]">
+            {fret}
           </div>
         ))}
       </div>
 
-      {/* String rows + inlay dot overlay */}
+      {/* String rows */}
       <div className="relative">
-        {STRINGS_LANDSCAPE.map((string) => (
-          <div key={string} role="row" className="flex items-center">
-            {/* String label */}
-            <div aria-hidden="true" className="w-6 shrink-0 text-center text-[10px] text-zinc-500">
-              {STRING_NAMES[string]}
-            </div>
+        {/* Wood grain surface — covers nut + fret cells area only (left edge = nut left edge) */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-y-0 pointer-events-none"
+          style={{ left: "calc(1.75rem + 2rem)", right: 0, background: GRAIN_H }}
+        />
 
-            <div className="flex flex-1">
-              {FRETS.map((fret) => (
-                <FretCell
-                  key={fret}
-                  string={string}
-                  fret={fret}
-                  highlight={getHighlight(highlights, string, fret)}
-                  disabled={disabled}
-                  isNut={fret === 0}
-                  nutEdge="left"
-                  handleTap={handleTap}
-                  className="flex-1 h-10 border-r border-r-zinc-700"
-                />
-              ))}
-            </div>
-          </div>
-        ))}
-
-        {/* Inlay dots — absolutely overlaid so they don't break the fret grid */}
-        <div aria-hidden="true" className="absolute left-6 right-0 top-0 bottom-0 pointer-events-none">
+        {/* Pearl inlay dots — rendered before string rows so they sit beneath highlight dots */}
+        <div aria-hidden="true" className="absolute top-0 bottom-0 pointer-events-none"
+          style={{ left: "calc(1.75rem + 2rem + 8px)", right: 0 }}>
           {[...SINGLE_DOT_FRETS].map((fret) => (
             <span
               key={fret}
-              className="absolute w-2.5 h-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-zinc-400"
-              style={{ left: DOT_LEFT[fret], top: "50%" }}
+              className={`absolute ${PEARL_SIZE} -translate-x-1/2 -translate-y-1/2 rounded-full`}
+              style={{
+                left: DOT_LEFT[fret],
+                top: "50%",
+                ...PEARL_STYLE,
+              }}
             />
           ))}
-          {/* Double dot at fret 12 */}
-          <span
-            className="absolute w-2.5 h-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-zinc-400"
-            style={{ left: DOT_LEFT[12], top: "33%" }}
-          />
-          <span
-            className="absolute w-2.5 h-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-zinc-400"
-            style={{ left: DOT_LEFT[12], top: "67%" }}
-          />
+          <span className={`absolute ${PEARL_SIZE} -translate-x-1/2 -translate-y-1/2 rounded-full`}
+            style={{ left: DOT_LEFT[12], top: "33%", ...PEARL_STYLE }} />
+          <span className={`absolute ${PEARL_SIZE} -translate-x-1/2 -translate-y-1/2 rounded-full`}
+            style={{ left: DOT_LEFT[12], top: "67%", ...PEARL_STYLE }} />
         </div>
+
+        {STRINGS_LANDSCAPE.map((string) => (
+          <div key={string} role="row" className="flex items-center">
+            {/* String label — on the dark surround */}
+            <div aria-hidden="true" className="w-7 shrink-0 text-center text-[11px] font-semibold text-[#a89070]">
+              {STRING_NAMES[string]}
+            </div>
+
+            {/* Open string cell (fret 0) — above the nut, on the dark surround */}
+            <FretCell
+              string={string}
+              fret={0}
+              highlight={getHighlight(highlights, string, 0)}
+              disabled={disabled}
+              isPortrait={false}
+              handleTap={handleTap}
+              className="w-8 shrink-0 h-10"
+            />
+
+            {/* Nut segment */}
+            <NutSegment stringNum={string} rowHeight="h-10" />
+
+            {/* Fret cells 1–12 */}
+            {FRETS_MAIN.map((fret) => (
+              <FretCell
+                key={fret}
+                string={string}
+                fret={fret}
+                highlight={getHighlight(highlights, string, fret)}
+                disabled={disabled}
+                isPortrait={false}
+                handleTap={handleTap}
+                className="flex-1 h-10 border-r-2 border-r-[#c8bfb0]/55"
+              />
+            ))}
+          </div>
+        ))}
+
       </div>
     </div>
   );

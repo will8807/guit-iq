@@ -49,6 +49,7 @@ vi.mock("tone", () => ({
   Sampler: MockSampler,
   PolySynth: MockPolySynth,
   Synth: MockSynth,
+  now: vi.fn(() => 0),
 }));
 
 // ─── Import engine after mock is set up ──────────────────────────────────────
@@ -238,18 +239,17 @@ describe("playFeedbackChime", () => {
 
   it("plays a high note for correct feedback", async () => {
     await playFeedbackChime("correct");
-    expect(mockFeedbackSynth.triggerAttackRelease).toHaveBeenCalledWith(
-      "C5",
-      0.15
-    );
+    // Correct: ascending arpeggio C5 → E5 → G5
+    expect(mockTriggerAttackRelease).toHaveBeenCalledWith("C5", "8n", 0);
+    expect(mockTriggerAttackRelease).toHaveBeenCalledWith("E5", "8n", 0.1);
+    expect(mockTriggerAttackRelease).toHaveBeenCalledWith("G5", "8n", 0.2);
   });
 
   it("plays a low note for incorrect feedback", async () => {
     await playFeedbackChime("incorrect");
-    expect(mockFeedbackSynth.triggerAttackRelease).toHaveBeenCalledWith(
-      "C3",
-      0.25
-    );
+    // Incorrect: dissonant descending pair C3 → Bb2
+    expect(mockTriggerAttackRelease).toHaveBeenCalledWith("C3", "4n", 0);
+    expect(mockTriggerAttackRelease).toHaveBeenCalledWith("Bb2", "4n", 0.12);
   });
 
   it("silently no-ops if audio is not ready", async () => {
@@ -260,8 +260,8 @@ describe("playFeedbackChime", () => {
 
   it("disposes the chime synth after playback", async () => {
     await playFeedbackChime("correct");
-    vi.advanceTimersByTime(1100);
-    expect(mockFeedbackSynth.dispose).toHaveBeenCalled();
+    vi.advanceTimersByTime(1600);
+    expect(mockSynthDispose).toHaveBeenCalled();
   });
 });
 
