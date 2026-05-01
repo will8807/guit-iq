@@ -62,7 +62,7 @@ export default function ChallengeFeedback({
         {/* Next button */}
         <button
           onClick={onNext}
-          className="ml-auto px-5 py-2 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 rounded-full font-semibold text-white text-sm transition-colors shrink-0"
+          className="ml-auto px-5 py-2 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 rounded-full font-semibold text-black text-sm transition-colors shrink-0"
         >
           Next →
         </button>
@@ -73,7 +73,7 @@ export default function ChallengeFeedback({
         <div className="flex items-center gap-3 px-1">
           <p className="text-xs text-zinc-400">
             That was a{" "}
-            <span className="text-indigo-300 font-semibold">{ir.intervalName}</span>
+            <span className="text-amber-300 font-semibold">{ir.intervalName}</span>
           </p>
           {/* Per-note result pills */}
           <div className="ml-auto flex gap-2">
@@ -114,7 +114,7 @@ export default function ChallengeFeedback({
           <div className="flex items-center gap-3">
             <p className="text-xs text-zinc-400">
               That was a{" "}
-              <span className="text-indigo-300 font-semibold">{cr.chordLabel}</span>
+              <span className="text-amber-300 font-semibold">{cr.chordLabel}</span>
             </p>
             {/* Missed note count pill */}
             {cr.missedPitchClasses.size > 0 && (
@@ -156,7 +156,7 @@ export default function ChallengeFeedback({
           <div className="flex items-center gap-3">
             <p className="text-xs text-zinc-400">
               That was{" "}
-              <span className="text-indigo-300 font-semibold">{far.targetNote}</span>
+              <span className="text-amber-300 font-semibold">{far.targetNote}</span>
             </p>
             {far.missedPositions.length > 0 && (
               <span className="ml-auto text-xs px-2 py-0.5 rounded-full font-medium bg-amber-900/60 text-amber-300">

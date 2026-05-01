@@ -22,7 +22,7 @@ export default function TunerPage() {
   const nearestStr = pitch ? nearestString(pitch) : null;
 
   return (
-    <main className="min-h-screen bg-zinc-900 text-white flex flex-col items-center justify-between p-6 gap-6">
+    <main className="min-h-screen bg-[#100c06] text-white flex flex-col items-center justify-between p-6 gap-6">
 
       {/* ── Header ── */}
       <div className="w-full flex items-center justify-between">
@@ -104,7 +104,7 @@ export default function TunerPage() {
         ) : (
           <button
             onClick={start}
-            className="w-full py-4 rounded-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 font-bold text-lg transition-colors"
+            className="w-full py-4 rounded-full bg-amber-500 hover:bg-amber-400 active:bg-amber-600 font-bold text-lg text-black transition-colors"
           >
             {error ? "Try Again" : "Start Tuner"}
           </button>
@@ -124,13 +124,13 @@ export default function TunerPage() {
                   key={gs.string}
                   className={`flex-1 flex flex-col items-center py-2 rounded-lg transition-colors ${
                     isNearest
-                      ? "bg-indigo-900/60 border border-indigo-500"
+                      ? "bg-amber-900/40 border border-amber-500"
                       : "bg-zinc-800"
                   }`}
                 >
                   <span
                     className={`text-xs font-bold ${
-                      isNearest ? "text-indigo-300" : "text-zinc-400"
+                      isNearest ? "text-amber-300" : "text-zinc-400"
                     }`}
                   >
                     {gs.note}

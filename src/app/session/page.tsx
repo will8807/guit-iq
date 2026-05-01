@@ -266,8 +266,8 @@ export default function SessionPage() {
   // which satisfies the Web Audio API user-gesture requirement.
   if (phase === "idle") {
     return (
-      <main className="min-h-screen bg-zinc-900 text-white flex flex-col items-center justify-center gap-8 p-6">
-        <h1 className="text-3xl font-bold">🎸 GuitIQ</h1>
+      <main className="min-h-screen bg-[#100c06] text-white flex flex-col items-center justify-center gap-8 p-6">
+        <h1 className="text-3xl font-bold"><span className="text-amber-400">Guit</span>IQ</h1>
 
         {score.total > 0 && (
           <p className="text-zinc-400">
@@ -284,7 +284,7 @@ export default function SessionPage() {
               className={[
                 "py-3 rounded-lg font-semibold capitalize transition-colors",
                 difficulty === d
-                  ? "bg-indigo-600 text-white"
+                  ? "bg-amber-500 text-black"
                   : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700",
               ].join(" ")}
             >
@@ -308,7 +308,7 @@ export default function SessionPage() {
             onClick={() => setShowRoot(!showRoot)}
             className={[
               "relative w-12 h-6 rounded-full transition-colors shrink-0",
-              showRoot ? "bg-indigo-600" : "bg-zinc-600",
+              showRoot ? "bg-amber-500" : "bg-zinc-600",
             ].join(" ")}
           >
             <span
@@ -322,7 +322,7 @@ export default function SessionPage() {
 
         <button
           onClick={handleStart}
-          className="px-8 py-4 bg-green-600 hover:bg-green-500 rounded-full text-xl font-bold"
+          className="px-8 py-4 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 rounded-full text-xl font-bold text-black"
         >
           Play
         </button>
@@ -345,13 +345,13 @@ export default function SessionPage() {
 
   // Step 4: active challenge (playing / awaiting / feedback)
   return (
-    <main className="min-h-screen w-full bg-zinc-900 text-white flex flex-col p-4 gap-4 max-w-2xl mx-auto">
+    <main className="min-h-screen w-full bg-[#100c06] text-white flex flex-col p-4 gap-4 max-w-2xl mx-auto">
       {/* Promotion toast */}
       {toastVisible && promotedDifficulty && (
         <div
           role="status"
           aria-live="polite"
-          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-indigo-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg text-sm animate-bounce"
+          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-amber-500 text-black px-6 py-3 rounded-full font-semibold shadow-lg text-sm animate-bounce"
         >
           🎉 Levelled up to <span className="capitalize">{promotedDifficulty}</span>!
         </div>
@@ -359,7 +359,7 @@ export default function SessionPage() {
 
       {/* Header */}
       <div className="flex items-center justify-between pt-2">
-        <h1 className="text-lg font-bold">🎸 GuitIQ</h1>
+        <h1 className="text-lg font-bold"><span className="text-amber-400">Guit</span>IQ</h1>
         <div className="flex items-center gap-3">
           {streak >= 2 && (
             <span className="text-sm text-amber-400 font-semibold" aria-label={`${streak} streak`}>
@@ -427,7 +427,7 @@ export default function SessionPage() {
             className={[
               "px-8 py-3 rounded-full font-semibold text-white text-sm transition-colors",
               chordTaps.length > 0
-                ? "bg-green-600 hover:bg-green-500 active:bg-green-700"
+                ? "bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-black"
                 : "bg-zinc-700 opacity-40 cursor-not-allowed",
             ].join(" ")}
           >
@@ -439,7 +439,7 @@ export default function SessionPage() {
         <div className="flex justify-center">
           <button
             onClick={submitIntervalAnswer}
-            className="px-8 py-3 rounded-full font-semibold text-white text-sm transition-colors bg-green-600 hover:bg-green-500 active:bg-green-700"
+            className="px-8 py-3 rounded-full font-semibold text-black text-sm transition-colors bg-amber-500 hover:bg-amber-400 active:bg-amber-600"
           >
             Done
           </button>

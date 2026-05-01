@@ -35,7 +35,7 @@ export default function SettingsPage() {
   const MIX_STEPS = [0, 0.25, 0.5, 0.75, 1] as const;
 
   return (
-    <main className="min-h-screen bg-zinc-900 text-white flex flex-col items-center gap-8 p-6 pt-10">
+    <main className="min-h-screen bg-[#100c06] text-white flex flex-col items-center gap-8 p-6 pt-10">
       <div className="flex items-center justify-between w-full max-w-sm">
         <Link href="/" className="text-zinc-400 hover:text-white text-sm">
           ← Home
@@ -60,7 +60,7 @@ export default function SettingsPage() {
             role="switch"
             aria-checked={showRoot}
             onClick={() => setShowRoot(!showRoot)}
-            className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+            className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
               showRoot ? "bg-amber-500" : "bg-zinc-600"
             }`}
           >
@@ -87,7 +87,7 @@ export default function SettingsPage() {
                 aria-pressed={sessionLength === n}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   sessionLength === n
-                    ? "bg-indigo-600 text-white"
+                    ? "bg-amber-500 text-black"
                     : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
                 }`}
               >
@@ -106,7 +106,7 @@ export default function SettingsPage() {
         <div className="flex flex-col gap-2">
           <div className="flex justify-between">
             <p className="font-medium text-sm">Interval challenges</p>
-            <p className="text-sm text-indigo-300 font-semibold">{toPercent(intervalMix)}%</p>
+            <p className="text-sm text-amber-300 font-semibold">{toPercent(intervalMix)}%</p>
           </div>
           <p className="text-xs text-zinc-400">
             Hear an interval — tap both notes. 0% = none, 100% = all.
@@ -123,7 +123,7 @@ export default function SettingsPage() {
                 aria-pressed={intervalMix === v}
                 className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
                   intervalMix === v
-                    ? "bg-indigo-600 text-white"
+                    ? "bg-amber-500 text-black"
                     : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
                 }`}
               >
@@ -223,7 +223,7 @@ export default function SettingsPage() {
       <div className="w-full max-w-sm mt-auto pt-4">
         <Link
           href="/session"
-          className="block w-full text-center py-4 bg-indigo-600 hover:bg-indigo-500 rounded-full font-bold text-lg transition-colors"
+          className="block w-full text-center py-4 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 rounded-full font-bold text-lg text-black transition-colors"
         >
           Start Session
         </Link>
