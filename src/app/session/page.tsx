@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useState } from "react";
+import Link from "next/link";
 import { useSessionStore } from "@/store/sessionStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { initAudio, playNote, playChord, isAudioReady, playFeedbackChime } from "@/lib/audio/engine";
@@ -521,6 +522,14 @@ export default function SessionPage() {
               🔥 {streak}
             </span>
           )}
+          <Link
+            href="/settings"
+            aria-label="Settings"
+            className="text-zinc-400 hover:text-zinc-200 transition-colors text-lg"
+            title="Settings"
+          >
+            ⚙️
+          </Link>
           <button
             onClick={toggleLayout}
             aria-label={`Switch to ${layout === "portrait" ? "landscape" : "portrait"} layout`}

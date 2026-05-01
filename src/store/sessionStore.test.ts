@@ -873,14 +873,19 @@ describe("chord challenge in submitAnswer / submitChordAnswer", () => {
     const ch = challenge as FindTheChordChallenge;
     const allPos = getAllPositions();
 
-    // Find one fretboard position for each required pitch class
+    // Find one fretboard position for each required pitch class,
+    // ensuring each tap is on a different string (a string can only play one note).
     const taps: { string: number; fret: number }[] = [];
+    const usedStrings = new Set<number>();
     for (const pc of ch.pitchClasses) {
       const pos = allPos.find((p) => {
         const m = fretToMidi(p.string, p.fret);
-        return m % 12 === pc && m >= GUITAR_MIDI_MIN && m <= GUITAR_MIDI_MAX;
+        return m % 12 === pc && m >= GUITAR_MIDI_MIN && m <= GUITAR_MIDI_MAX && !usedStrings.has(p.string);
       });
-      if (pos) taps.push(pos);
+      if (pos) {
+        taps.push(pos);
+        usedStrings.add(pos.string);
+      }
     }
 
     expect(taps.length).toBe(ch.pitchClasses.size);
@@ -928,5 +933,18 @@ describe("chord challenge in submitAnswer / submitChordAnswer", () => {
     expect(useSessionStore.getState().chordTaps).toHaveLength(0);
     useSessionStore.getState().submitAnswer(1, 3); // re-add
     expect(useSessionStore.getState().chordTaps).toHaveLength(1);
+  });
+
+  it("tapping a different fret on the same string replaces the existing tap", () => {
+    setupChordChallenge();
+    useSessionStore.getState().submitAnswer(1, 3); // tap string 1, fret 3
+    useSessionStore.getState().submitAnswer(2, 5); // tap string 2, fret 5
+    expect(useSessionStore.getState().chordTaps).toHaveLength(2);
+    // Now tap string 1 at a different fret — should replace, not add
+    useSessionStore.getState().submitAnswer(1, 7);
+    const taps = useSessionStore.getState().chordTaps;
+    expect(taps).toHaveLength(2);
+    expect(taps.find((t) => t.string === 1)).toEqual({ string: 1, fret: 7 });
+    expect(taps.find((t) => t.string === 2)).toEqual({ string: 2, fret: 5 });
   });
 });

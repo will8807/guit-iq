@@ -315,14 +315,18 @@ export const useSessionStore = create<SessionState>()(
         } else {
           // ── Find the Chord evaluation (multi-tap, accumulate / toggle) ───
           // Tap an already-tapped position → remove it (undo); otherwise add it.
+          // Only one tap per string is allowed (a guitar string can only ring one note).
           const existing = get().chordTaps;
-          const idx = existing.findIndex(
+          const samePosition = existing.findIndex(
             (t) => t.string === string && t.fret === fret
           );
-          if (idx !== -1) {
-            set({ chordTaps: existing.filter((_, i) => i !== idx) });
+          if (samePosition !== -1) {
+            // Tapped same cell again → deselect it
+            set({ chordTaps: existing.filter((_, i) => i !== samePosition) });
           } else {
-            set({ chordTaps: [...existing, { string, fret }] });
+            // Replace any existing tap on the same string, then add new tap
+            const withoutSameString = existing.filter((t) => t.string !== string);
+            set({ chordTaps: [...withoutSameString, { string, fret }] });
           }
           return;
         }
