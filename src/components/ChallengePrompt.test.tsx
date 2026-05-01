@@ -41,13 +41,13 @@ describe("ChallengePrompt", () => {
 
   it("shows interval prompt text for find-the-interval challenge (step 1)", () => {
     render(<ChallengePrompt isPlaying={false} onReplay={vi.fn()} challengeType="find-the-interval" intervalStep={1} />);
-    expect(screen.getByText("Tap the two notes of the interval")).toBeDefined();
+    expect(screen.getByText("Tap the root note")).toBeDefined();
     expect(screen.getByText("1/2")).toBeDefined();
   });
 
   it("shows interval prompt text for find-the-interval challenge (step 2)", () => {
     render(<ChallengePrompt isPlaying={false} onReplay={vi.fn()} challengeType="find-the-interval" intervalStep={2} />);
-    expect(screen.getByText("Now tap the other note")).toBeDefined();
+    expect(screen.getByText("Now tap the second note")).toBeDefined();
     expect(screen.getByText("2/2")).toBeDefined();
   });
 

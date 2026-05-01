@@ -93,34 +93,34 @@ describe("Fretboard interaction", () => {
 // ─── Highlights ───────────────────────────────────────────────────────────────
 
 describe("Fretboard highlights", () => {
-  it("applies correct highlight to the specified cell", () => {
+  it("applies correct highlight class to the specified cell", () => {
     render(
       <Fretboard
         highlights={[{ string: 6, fret: 5, variant: "correct" }]}
       />
     );
     const cell = screen.getByRole("gridcell", { name: "String 6, fret 5" });
-    expect(cell.parentElement!.querySelector('[data-variant="correct"]')).not.toBeNull();
+    expect(cell.querySelector("span")!.className).toContain("bg-green-500");
   });
 
-  it("applies incorrect highlight", () => {
+  it("applies incorrect highlight class", () => {
     render(
       <Fretboard
         highlights={[{ string: 1, fret: 0, variant: "incorrect" }]}
       />
     );
     const cell = screen.getByRole("gridcell", { name: "String 1, fret 0" });
-    expect(cell.parentElement!.querySelector('[data-variant="incorrect"]')).not.toBeNull();
+    expect(cell.querySelector("span")!.className).toContain("bg-red-500");
   });
 
-  it("applies hint highlight", () => {
+  it("applies hint highlight class", () => {
     render(
       <Fretboard
         highlights={[{ string: 3, fret: 5, variant: "hint" }]}
       />
     );
     const cell = screen.getByRole("gridcell", { name: "String 3, fret 5" });
-    expect(cell.parentElement!.querySelector('[data-variant="hint"]')).not.toBeNull();
+    expect(cell.querySelector("span")!.className).toContain("bg-yellow-400");
   });
 
   it("can highlight multiple cells simultaneously", () => {
@@ -133,10 +133,10 @@ describe("Fretboard highlights", () => {
       />
     );
     expect(
-      screen.getByRole("gridcell", { name: "String 6, fret 0" }).parentElement!.querySelector('[data-variant="hint"]')
-    ).not.toBeNull();
+      screen.getByRole("gridcell", { name: "String 6, fret 0" }).querySelector("span")!.className
+    ).toContain("bg-yellow-400");
     expect(
-      screen.getByRole("gridcell", { name: "String 1, fret 12" }).parentElement!.querySelector('[data-variant="correct"]')
-    ).not.toBeNull();
+      screen.getByRole("gridcell", { name: "String 1, fret 12" }).querySelector("span")!.className
+    ).toContain("bg-green-500");
   });
 });

@@ -47,21 +47,13 @@ test.describe("Session flow", () => {
     await expect(page).toHaveURL(/\/session/);
   });
 
-  test("session page shows Start button before audio init", async ({ page }) => {
+  test("session page shows difficulty picker on arrival", async ({ page }) => {
     await page.goto("/session");
-    await expect(page.getByRole("button", { name: /start/i })).toBeVisible();
-  });
-
-  test("clicking Start advances to difficulty picker (idle phase)", async ({ page }) => {
-    await page.goto("/session");
-    await page.getByRole("button", { name: /start/i }).click();
-    // After audio init we should see difficulty buttons and the Play button
     await expect(page.getByRole("button", { name: /play/i })).toBeVisible({ timeout: 5000 });
   });
 
   test("can pick a difficulty and start a challenge", async ({ page }) => {
     await page.goto("/session");
-    await page.getByRole("button", { name: /start/i }).click();
     await expect(page.getByRole("button", { name: /play/i })).toBeVisible({ timeout: 5000 });
 
     // Select medium difficulty
@@ -74,7 +66,6 @@ test.describe("Session flow", () => {
 
   test("tapping a fretboard cell during awaiting phase moves to feedback", async ({ page }) => {
     await page.goto("/session");
-    await page.getByRole("button", { name: /start/i }).click();
     await expect(page.getByRole("button", { name: /play/i })).toBeVisible({ timeout: 5000 });
     await page.getByRole("button", { name: /play/i }).click();
 
@@ -96,7 +87,6 @@ test.describe("Session flow", () => {
 
   test("score increments after each answered challenge", async ({ page }) => {
     await page.goto("/session");
-    await page.getByRole("button", { name: /start/i }).click();
     await expect(page.getByRole("button", { name: /play/i })).toBeVisible({ timeout: 5000 });
     await page.getByRole("button", { name: /play/i }).click();
 
@@ -155,8 +145,6 @@ test.describe("session completion", () => {
   }) => {
     await page.goto("/session");
     // Init audio
-    await page.getByRole("button", { name: /start/i }).click();
-    // Difficulty picker → Play
     await expect(page.getByRole("button", { name: /play/i })).toBeVisible({
       timeout: 5000,
     });
@@ -175,7 +163,6 @@ test.describe("session completion", () => {
 
   test("completion screen shows score and accuracy", async ({ page }) => {
     await page.goto("/session");
-    await page.getByRole("button", { name: /start/i }).click();
     await expect(page.getByRole("button", { name: /play/i })).toBeVisible({
       timeout: 5000,
     });
@@ -197,7 +184,6 @@ test.describe("session completion", () => {
 
   test("'Play Again' restarts the session", async ({ page }) => {
     await page.goto("/session");
-    await page.getByRole("button", { name: /start/i }).click();
     await expect(page.getByRole("button", { name: /play/i })).toBeVisible({
       timeout: 5000,
     });
@@ -219,7 +205,6 @@ test.describe("session completion", () => {
 
   test("'Home' link points to /", async ({ page }) => {
     await page.goto("/session");
-    await page.getByRole("button", { name: /start/i }).click();
     await expect(page.getByRole("button", { name: /play/i })).toBeVisible({
       timeout: 5000,
     });

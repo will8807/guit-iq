@@ -28,10 +28,6 @@ import {
   generateChordChallenge,
   type FindTheChordChallenge,
 } from "@/lib/challenges/findTheChord";
-import {
-  generateFindAllChallenge,
-  type FindAllPositionsChallenge,
-} from "@/lib/challenges/findAllPositions";
 
 // ─── Discriminated union ──────────────────────────────────────────────────────
 
@@ -44,11 +40,8 @@ export type TaggedIntervalChallenge = IntervalChallenge & { type: "find-the-inte
 /** Find-the-Chord challenge with an explicit type discriminant */
 export type TaggedChordChallenge = FindTheChordChallenge & { type: "find-the-chord" };
 
-/** Find-All-Positions challenge with an explicit type discriminant */
-export type TaggedFindAllChallenge = FindAllPositionsChallenge & { type: "find-all-positions" };
-
 /** Union of all challenge types the session can contain */
-export type Challenge = TaggedNoteChallenge | TaggedIntervalChallenge | TaggedChordChallenge | TaggedFindAllChallenge;
+export type Challenge = TaggedNoteChallenge | TaggedIntervalChallenge | TaggedChordChallenge;
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -72,11 +65,6 @@ export interface SessionConfig {
    */
   chordMix?: number;
   /**
-   * Fraction of challenges that should be find-all-positions challenges, 0–1 (default: 0).
-   * Combined with intervalMix + chordMix — total must be <= 1.
-   */
-  findAllMix?: number;
-  /**
    * Per-note adaptive stats passed through to the weighted note generator.
    * Leave empty for uniform random selection.
    */
@@ -97,7 +85,6 @@ export function generateSession(config: SessionConfig = {}): Challenge[] {
     difficulty = "easy",
     intervalMix = 0,
     chordMix = 0,
-    findAllMix = 0,
     noteStats = {},
   } = config;
 
@@ -106,15 +93,12 @@ export function generateSession(config: SessionConfig = {}): Challenge[] {
     throw new Error("intervalMix must be between 0 and 1");
   if (chordMix < 0 || chordMix > 1)
     throw new Error("chordMix must be between 0 and 1");
-  if (findAllMix < 0 || findAllMix > 1)
-    throw new Error("findAllMix must be between 0 and 1");
-  if (intervalMix + chordMix + findAllMix > 1)
-    throw new Error("intervalMix + chordMix + findAllMix must not exceed 1");
+  if (intervalMix + chordMix > 1)
+    throw new Error("intervalMix + chordMix must not exceed 1");
 
   const intervalCount = Math.round(length * intervalMix);
   const chordCount = Math.round(length * chordMix);
-  const findAllCount = Math.round(length * findAllMix);
-  const noteCount = length - intervalCount - chordCount - findAllCount;
+  const noteCount = length - intervalCount - chordCount;
 
   const challenges: Challenge[] = [];
 
@@ -133,11 +117,6 @@ export function generateSession(config: SessionConfig = {}): Challenge[] {
     challenges.push({ ...base, type: "find-the-chord" });
   }
 
-  for (let i = 0; i < findAllCount; i++) {
-    const base = generateFindAllChallenge(difficulty);
-    challenges.push({ ...base, type: "find-all-positions" });
-  }
-
   // Fisher-Yates shuffle so the types are interleaved, not blocked
   for (let i = challenges.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -150,8 +129,7 @@ export function generateSession(config: SessionConfig = {}): Challenge[] {
   function challengeKey(c: Challenge): string {
     if (c.type === "find-the-note") return c.targetNote;
     if (c.type === "find-the-interval") return c.intervalKey;
-    if (c.type === "find-the-chord") return c.chordKey;
-    return c.targetNote;
+    return c.chordKey;
   }
 
   const MAX_RETRIES = 10;
@@ -167,12 +145,9 @@ export function generateSession(config: SessionConfig = {}): Challenge[] {
       } else if (challenges[i]!.type === "find-the-interval") {
         const base = generateIntervalChallenge(difficulty);
         challenges[i] = { ...base, type: "find-the-interval" };
-      } else if (challenges[i]!.type === "find-the-chord") {
+      } else {
         const base = generateChordChallenge(difficulty);
         challenges[i] = { ...base, type: "find-the-chord" };
-      } else {
-        const base = generateFindAllChallenge(difficulty);
-        challenges[i] = { ...base, type: "find-all-positions" };
       }
       retries++;
     }

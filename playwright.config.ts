@@ -6,12 +6,10 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: process.env.CI ? "github" : [["list"], ["html", { outputFolder: "playwright-report", open: "never" }]],
-  snapshotDir: "./test-results/ui-showcase-snapshots",
+  reporter: process.env.CI ? "github" : "list",
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
-    screenshot: "only-on-failure",
     // Disable animations in tests for reliability
     launchOptions: {
       args: ["--disable-web-security"],

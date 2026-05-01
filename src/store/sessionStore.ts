@@ -40,7 +40,6 @@ import {
 import { evaluateTwoTapInterval } from "@/lib/challenges/findTheInterval";
 import { fretToMidi } from "@/lib/music/notes";
 import { evaluateChordAnswer } from "@/lib/challenges/findTheChord";
-import { evaluateFindAllAnswer } from "@/lib/challenges/findAllPositions";
 import {
   generateSession,
   type Challenge,
@@ -98,12 +97,6 @@ export interface SessionState {
    * Empty for non-chord challenges.
    */
   chordTaps: { string: number; fret: number }[];
-  /**
-   * For find-all-positions challenges: accumulates tapped positions until the user
-   * presses "Done". Undo-by-retap: tapping an already-tapped position removes it.
-   * Empty for other challenge types.
-   */
-  findAllTaps: { string: number; fret: number }[];
   /** Per-answer history for the current session — passed to progressStore on completion */
   answers: AnswerHistory[];
 
@@ -124,11 +117,6 @@ export interface SessionState {
    * No-op if the current challenge is not a chord challenge.
    */
   submitChordAnswer: () => void;
-  /**
-   * For find-all-positions challenges: called when user presses "Done".
-   * No-op if the current challenge is not a find-all-positions challenge.
-   */
-  submitFindAllAnswer: () => void;
   /**
    * For interval challenges: called when user presses "Done" to evaluate the two taps.
    * No-op if the current challenge is not an interval challenge or both taps are not set.
@@ -165,7 +153,6 @@ export const useSessionStore = create<SessionState>()(
       intervalSecondTap: null,
       intervalSameStringHint: false,
       chordTaps: [],
-      findAllTaps: [],
       answers: [],
 
       startSession(config?: SessionConfig) {
@@ -192,7 +179,6 @@ export const useSessionStore = create<SessionState>()(
           intervalSecondTap: null,
           intervalSameStringHint: false,
           chordTaps: [],
-          findAllTaps: [],
           answers: [],
         });
       },
@@ -288,11 +274,9 @@ export const useSessionStore = create<SessionState>()(
             set({ intervalFirstTap: { string, fret }, intervalSecondTap: null, intervalSameStringHint: false });
             return;
           }
-          // Second tap: if it matches either required pitch but is on the same string
-          // as the first tap, surface the hint and don't accept it.
+          // Second tap: check for same-string correct pitch before accepting
           const tappedMidi = fretToMidi(string, fret);
-          const matchesEitherPitch = tappedMidi === challenge.secondMidi || tappedMidi === challenge.rootMidi;
-          if (matchesEitherPitch && string === first.string) {
+          if (tappedMidi === challenge.secondMidi && string === first.string) {
             // Right pitch, wrong string — surface hint, don't store as second tap
             set({ intervalSameStringHint: true });
             return;
@@ -300,33 +284,17 @@ export const useSessionStore = create<SessionState>()(
           // Valid second tap — store it and clear any previous same-string hint
           set({ intervalSecondTap: { string, fret }, intervalSameStringHint: false });
           return;
-        } else if (challenge.type === "find-all-positions") {
-          // ── Find All Positions (multi-tap, accumulate / toggle) ──────────
-          const existing = get().findAllTaps;
+        } else {
+          // ── Find the Chord evaluation (multi-tap, accumulate / toggle) ───
+          // Tap an already-tapped position → remove it (undo); otherwise add it.
+          const existing = get().chordTaps;
           const idx = existing.findIndex(
             (t) => t.string === string && t.fret === fret
           );
           if (idx !== -1) {
-            set({ findAllTaps: existing.filter((_, i) => i !== idx) });
+            set({ chordTaps: existing.filter((_, i) => i !== idx) });
           } else {
-            set({ findAllTaps: [...existing, { string, fret }] });
-          }
-          return;
-        } else {
-          // ── Find the Chord evaluation (multi-tap, accumulate / toggle) ───
-          // Tap an already-tapped position → remove it (undo); otherwise add it.
-          // Only one tap per string is allowed (a guitar string can only ring one note).
-          const existing = get().chordTaps;
-          const samePosition = existing.findIndex(
-            (t) => t.string === string && t.fret === fret
-          );
-          if (samePosition !== -1) {
-            // Tapped same cell again → deselect it
-            set({ chordTaps: existing.filter((_, i) => i !== samePosition) });
-          } else {
-            // Replace any existing tap on the same string, then add new tap
-            const withoutSameString = existing.filter((t) => t.string !== string);
-            set({ chordTaps: [...withoutSameString, { string, fret }] });
+            set({ chordTaps: [...existing, { string, fret }] });
           }
           return;
         }
@@ -342,7 +310,7 @@ export const useSessionStore = create<SessionState>()(
         const result: EvaluationResult = {
           correct: chordResult.correct,
           tappedPosition: sentinel,
-          validPositions: [],
+          validPositions: chordResult.rootPositions,
           targetNote: challenge.chordLabel,
           chordResult,
         };
@@ -354,41 +322,6 @@ export const useSessionStore = create<SessionState>()(
           phase: "feedback",
           lastResult: result,
           chordTaps: [],
-          score: {
-            correct: score.correct + (result.correct ? 1 : 0),
-            total: score.total + 1,
-          },
-          streak: newStreak,
-          bestStreak: newBestStreak,
-          answers: [
-            ...answers,
-            { correct: result.correct, challengeType: challenge.type, timestamp: Date.now() },
-          ],
-        });
-      },
-
-      submitFindAllAnswer() {
-        const { phase, challenge, score, streak, bestStreak, findAllTaps, answers } = get();
-        if (phase !== "awaiting" || !challenge || challenge.type !== "find-all-positions") return;
-
-        const findAllResult = evaluateFindAllAnswer(challenge, findAllTaps);
-
-        const sentinel = findAllTaps[0] ?? { string: 1, fret: 0 };
-        const result: EvaluationResult = {
-          correct: findAllResult.correct,
-          tappedPosition: sentinel,
-          validPositions: challenge.validPositions,
-          targetNote: challenge.targetNote,
-          findAllResult,
-        };
-
-        const newStreak = result.correct ? streak + 1 : 0;
-        const newBestStreak = Math.max(bestStreak, newStreak);
-
-        set({
-          phase: "feedback",
-          lastResult: result,
-          findAllTaps: [],
           score: {
             correct: score.correct + (result.correct ? 1 : 0),
             total: score.total + 1,
@@ -482,7 +415,6 @@ export const useSessionStore = create<SessionState>()(
           intervalSecondTap: null,
           intervalSameStringHint: false,
           chordTaps: [],
-          findAllTaps: [],
           answers: [],
           difficulty: "easy",
           // noteStats intentionally preserved across resets

@@ -21,8 +21,6 @@ export default function SettingsPage() {
     setIntervalMix,
     chordMix,
     setChordMix,
-    findAllMix,
-    setFindAllMix,
   } = useSettingsStore();
   const { clearProgress, totalSessions } = useProgressStore();
 
@@ -116,8 +114,8 @@ export default function SettingsPage() {
               <button
                 key={v}
                 onClick={() => {
-                  // Clamp so intervalMix + chordMix + findAllMix ≤ 1
-                  const clamped = Math.min(v, 1 - chordMix - findAllMix);
+                  // Clamp so intervalMix + chordMix ≤ 1
+                  const clamped = Math.min(v, 1 - chordMix);
                   setIntervalMix(clamped);
                 }}
                 aria-pressed={intervalMix === v}
@@ -147,7 +145,7 @@ export default function SettingsPage() {
               <button
                 key={v}
                 onClick={() => {
-                  const clamped = Math.min(v, 1 - intervalMix - findAllMix);
+                  const clamped = Math.min(v, 1 - intervalMix);
                   setChordMix(clamped);
                 }}
                 aria-pressed={chordMix === v}
@@ -163,40 +161,10 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Find All Mix */}
-        <div className="flex flex-col gap-2">
-          <div className="flex justify-between">
-            <p className="font-medium text-sm">Find All Positions</p>
-            <p className="text-sm text-emerald-300 font-semibold">{toPercent(findAllMix)}%</p>
-          </div>
-          <p className="text-xs text-zinc-400">
-            Hear a note — tap every position for that exact pitch. 0% = none, 100% = all.
-          </p>
-          <div className="flex gap-2" role="group" aria-label="Find all positions challenge fraction">
-            {MIX_STEPS.map((v) => (
-              <button
-                key={v}
-                onClick={() => {
-                  const clamped = Math.min(v, 1 - intervalMix - chordMix);
-                  setFindAllMix(clamped);
-                }}
-                aria-pressed={findAllMix === v}
-                className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
-                  findAllMix === v
-                    ? "bg-emerald-600 text-white"
-                    : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-                }`}
-              >
-                {toPercent(v)}%
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Summary */}
         <p className="text-xs text-zinc-500 text-center">
-          {toPercent(Math.max(0, 1 - intervalMix - chordMix - findAllMix))}% note ·{" "}
-          {toPercent(intervalMix)}% interval · {toPercent(chordMix)}% chord · {toPercent(findAllMix)}% find-all
+          {toPercent(Math.max(0, 1 - intervalMix - chordMix))}% note challenges ·{" "}
+          {toPercent(intervalMix)}% interval · {toPercent(chordMix)}% chord
         </p>
       </section>
 

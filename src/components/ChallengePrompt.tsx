@@ -8,9 +8,9 @@
  * unless Show Root is enabled.
  *
  * For interval challenges, the prompt changes depending on which tap step
- * we are waiting for. Tap order does not matter — either note can go first:
- *   Step 1 → "Tap the two notes of the interval"
- *   Step 2 → "Now tap the other note"
+ * we are waiting for:
+ *   Step 1 → "Tap the root note"
+ *   Step 2 → "Now tap the second note"
  *
  * For chord challenges, the prompt shows:
  *   "Tap all chord tones" with a running tap counter badge.
@@ -28,7 +28,7 @@ interface ChallengePromptProps {
   /** Called when the user taps the replay button */
   onReplay: () => void;
   /** Challenge type — controls prompt text */
-  challengeType?: "find-the-note" | "find-the-interval" | "find-the-chord" | "find-all-positions";
+  challengeType?: "find-the-note" | "find-the-interval" | "find-the-chord";
   /**
    * For interval challenges: 1 = waiting for root tap, 2 = waiting for second-note tap.
    * Ignored for note/chord challenges.
@@ -46,45 +46,24 @@ interface ChallengePromptProps {
    */
   rootNote?: string;
   /**
-   * For chord/find-all challenges: number of taps accumulated so far.
+   * For chord challenges: number of taps accumulated so far.
    * Shown as a badge when > 0.
    */
   chordTapCount?: number;
-  /**
-   * When provided, a "Done" button is rendered next to Replay.
-   * Pass the submit handler (submitChordAnswer, submitFindAllAnswer, etc.).
-   */
-  onDone?: () => void;
-  /** Label for the Done button, e.g. "Done (3 taps)". Defaults to "Done". */
-  doneLabel?: string;
-  /** Whether the Done button should be disabled. */
-  doneDisabled?: boolean;
-  /** For interval challenges: show the same-string hint instead of a Done button. */
-  sameStringHint?: boolean;
-  /**
-   * Hint system (no-root mode only).
-   * onHint — called when the 💡 button is pressed; omit to hide the button entirely.
-   * hintLevel — 0 = no hint shown, 1 = name revealed, 2 = name + position revealed.
-   * hintName  — the name to display at level 1+ (e.g. "A3", "C Major", "Perfect 5th").
-   */
-  onHint?: () => void;
-  hintLevel?: 0 | 1 | 2;
-  hintName?: string;
 }
 
 function getPromptText(
   isPlaying: boolean,
-  challengeType: "find-the-note" | "find-the-interval" | "find-the-chord" | "find-all-positions",
+  challengeType: "find-the-note" | "find-the-interval" | "find-the-chord",
   intervalStep: 1 | 2,
   intervalName?: string,
 ): string {
   if (isPlaying) return "🎵 Listen…";
   if (challengeType === "find-the-chord") return "Tap all chord tones";
-  if (challengeType === "find-all-positions") return "Find every position for this note";
   if (challengeType === "find-the-interval") {
     // Show Root ON: interval name provided, root is pre-filled — single tap
     if (intervalName) return `Find the ${intervalName}`;
-    return intervalStep === 1 ? "Tap the two notes of the interval" : "Now tap the other note";
+    return intervalStep === 1 ? "Tap the root note" : "Now tap the second note";
   }
   return "Find this note";
 }
@@ -97,13 +76,6 @@ export default function ChallengePrompt({
   intervalName,
   rootNote,
   chordTapCount = 0,
-  onDone,
-  doneLabel = "Done",
-  doneDisabled = false,
-  sameStringHint = false,
-  onHint,
-  hintLevel = 0,
-  hintName,
 }: ChallengePromptProps) {
   const promptText = getPromptText(isPlaying, challengeType, intervalStep, intervalName);
 
@@ -120,8 +92,8 @@ export default function ChallengePrompt({
             </span>
           )}
 
-          {/* Tap counter for chord/find-all challenges */}
-          {(challengeType === "find-the-chord" || challengeType === "find-all-positions") && !isPlaying && chordTapCount > 0 && (
+          {/* Tap counter for chord challenges */}
+          {challengeType === "find-the-chord" && !isPlaying && chordTapCount > 0 && (
             <span className="text-xs text-indigo-300 bg-zinc-800 px-2 py-0.5 rounded-full shrink-0">
               {chordTapCount} tapped
             </span>
@@ -143,39 +115,6 @@ export default function ChallengePrompt({
           <span aria-hidden="true">🔁</span>
           {isPlaying ? "Playing…" : "Replay"}
         </button>
-
-        {/* Done button — shown for chord/interval/find-all challenges */}
-        {!isPlaying && sameStringHint && (
-          <span className="text-xs text-amber-400 shrink-0">
-            ✓ Try another string
-          </span>
-        )}
-        {!isPlaying && onDone && !sameStringHint && (
-          <button
-            onClick={onDone}
-            disabled={doneDisabled}
-            className={[
-              "px-4 py-2 rounded-full font-semibold text-white text-sm transition-colors shrink-0",
-              doneDisabled
-                ? "bg-zinc-700 opacity-40 cursor-not-allowed"
-                : "bg-green-600 hover:bg-green-500 active:bg-green-700",
-            ].join(" ")}
-          >
-            {doneLabel}
-          </button>
-        )}
-
-        {/* Hint button — only shown when onHint is provided and level < 2 */}
-        {!isPlaying && onHint && hintLevel < 2 && (
-          <button
-            onClick={onHint}
-            aria-label="Hint"
-            title={hintLevel === 0 ? "Reveal name" : "Reveal a position"}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-700 hover:bg-zinc-600 text-amber-400 text-sm transition-colors shrink-0"
-          >
-            💡
-          </button>
-        )}
       </div>
 
       {/* Show Root: display note/chord name as a text badge */}
@@ -188,25 +127,9 @@ export default function ChallengePrompt({
                 ? "Chord"
                 : "Note"}
           </span>
-          <span
-            className="text-sm font-bold text-amber-400 bg-zinc-800 px-2.5 py-0.5 rounded-md tracking-wide"
-            data-testid={challengeType === "find-the-chord" ? "chord-label" : undefined}
-          >
+          <span className="text-sm font-bold text-amber-400 bg-zinc-800 px-2.5 py-0.5 rounded-md tracking-wide">
             {rootNote}
           </span>
-        </div>
-      )}
-
-      {/* Hint name badge (level 1+) — only shown when Show Root is off */}
-      {!rootNote && hintLevel >= 1 && hintName && !isPlaying && (
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-amber-600 uppercase tracking-wide">Hint</span>
-          <span className="text-sm font-bold text-amber-300 bg-zinc-800 px-2.5 py-0.5 rounded-md tracking-wide">
-            {hintName}
-          </span>
-          {hintLevel === 1 && (
-            <span className="text-xs text-zinc-500">(press 💡 again for a position)</span>
-          )}
         </div>
       )}
     </div>

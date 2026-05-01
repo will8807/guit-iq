@@ -51,11 +51,6 @@ export interface EvaluationResult {
    * missed pitch classes, and the chord label.
    */
   chordResult?: import("@/lib/challenges/findTheChord").ChordEvaluationResult;
-  /**
-   * Present only for find-all-positions challenges — provides per-tap breakdown
-   * and the list of missed positions.
-   */
-  findAllResult?: import("@/lib/challenges/findAllPositions").FindAllEvaluationResult;
 }
 
 /**

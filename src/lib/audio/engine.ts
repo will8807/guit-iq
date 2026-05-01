@@ -216,35 +216,19 @@ export async function playFeedbackChime(
   if (!_isReady) return; // Silent fail — feedback is non-critical
 
   const Tone = await getTone();
+  const note = type === "correct" ? "C5" : "C3";
+  const duration = type === "correct" ? 0.15 : 0.25;
 
-  if (type === "correct") {
-    // Bright ascending arpeggio: C5 → E5 → G5, each note overlapping slightly
-    const chime = new Tone.PolySynth(Tone.Synth, {
-      oscillator: { type: "triangle" },
-      envelope: { attack: 0.004, decay: 0.18, sustain: 0.05, release: 0.45 },
-      volume: -10,
-    }).toDestination();
+  const chime = new Tone.Synth({
+    oscillator: { type: "sine" },
+    envelope: { attack: 0.005, decay: 0.1, sustain: 0, release: 0.3 },
+    volume: -12,
+  }).toDestination();
 
-    const now = Tone.now();
-    chime.triggerAttackRelease("C5", "8n", now);
-    chime.triggerAttackRelease("E5", "8n", now + 0.1);
-    chime.triggerAttackRelease("G5", "8n", now + 0.2);
+  chime.triggerAttackRelease(note, duration);
 
-    setTimeout(() => chime.dispose(), 1500);
-  } else {
-    // Low dissonant descending pair: C3 → Bb2, with a subtle growl
-    const chime = new Tone.PolySynth(Tone.Synth, {
-      oscillator: { type: "sawtooth" },
-      envelope: { attack: 0.01, decay: 0.35, sustain: 0, release: 0.4 },
-      volume: -14,
-    }).toDestination();
-
-    const now = Tone.now();
-    chime.triggerAttackRelease("C3", "4n", now);
-    chime.triggerAttackRelease("Bb2", "4n", now + 0.12);
-
-    setTimeout(() => chime.dispose(), 1500);
-  }
+  // Dispose after playback to avoid memory leaks
+  setTimeout(() => chime.dispose(), 1000);
 }
 
 // ─── State accessor ───────────────────────────────────────────────────────────
