@@ -76,11 +76,12 @@ export default function Home() {
         >
           Start Training
         </Link>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[
             { href: "/tuner", icon: "🎵", label: "Tuner" },
             { href: "/progress", icon: "📈", label: "Progress" },
             { href: "/settings", icon: "⚙️", label: "Settings" },
+            { href: "/demo", icon: "✨", label: "UI Showcase" },
           ].map(({ href, icon, label }) => (
             <Link
               key={href}

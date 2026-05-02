@@ -52,7 +52,6 @@ test.describe("M5.15 — Progress screen updated after session", () => {
   }) => {
     // ── 1. Complete a full session ────────────────────────────────────────
     await page.goto("/session");
-    await page.getByRole("button", { name: /start/i }).click();
     await expect(page.getByRole("button", { name: /play/i })).toBeVisible({
       timeout: 5000,
     });
@@ -80,7 +79,6 @@ test.describe("M5.15 — Progress screen updated after session", () => {
     page,
   }) => {
     await page.goto("/session");
-    await page.getByRole("button", { name: /start/i }).click();
     await expect(page.getByRole("button", { name: /play/i })).toBeVisible({
       timeout: 5000,
     });
@@ -105,7 +103,6 @@ test.describe("M5.15 — Progress screen updated after session", () => {
   }) => {
     // Session 1
     await page.goto("/session");
-    await page.getByRole("button", { name: /start/i }).click();
     await expect(page.getByRole("button", { name: /play/i })).toBeVisible({
       timeout: 5000,
     });

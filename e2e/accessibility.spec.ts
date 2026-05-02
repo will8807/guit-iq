@@ -55,7 +55,6 @@ test.describe("Accessibility", () => {
 
   test("session idle/difficulty screen has no axe violations", async ({ page }) => {
     await page.goto("/session");
-    await page.getByRole("button", { name: /start/i }).click();
     await expect(page.getByRole("button", { name: /play/i })).toBeVisible({ timeout: 5000 });
 
     const results = await new AxeBuilder({ page })
@@ -67,7 +66,6 @@ test.describe("Accessibility", () => {
 
   test("fretboard (awaiting phase) has no axe violations", async ({ page }) => {
     await page.goto("/session");
-    await page.getByRole("button", { name: /start/i }).click();
     await expect(page.getByRole("button", { name: /play/i })).toBeVisible({ timeout: 5000 });
     await page.getByRole("button", { name: /play/i }).click();
 
@@ -87,7 +85,6 @@ test.describe("Accessibility", () => {
 
   test("feedback phase has no axe violations", async ({ page }) => {
     await page.goto("/session");
-    await page.getByRole("button", { name: /start/i }).click();
     await expect(page.getByRole("button", { name: /play/i })).toBeVisible({ timeout: 5000 });
     await page.getByRole("button", { name: /play/i }).click();
 
