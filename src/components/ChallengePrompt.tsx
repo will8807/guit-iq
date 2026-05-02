@@ -122,7 +122,7 @@ export default function ChallengePrompt({
 
           {/* Tap counter for chord/find-all challenges */}
           {(challengeType === "find-the-chord" || challengeType === "find-all-positions") && !isPlaying && chordTapCount > 0 && (
-            <span className="text-xs text-indigo-300 bg-zinc-800 px-2 py-0.5 rounded-full shrink-0">
+            <span className="text-xs text-amber-300 bg-zinc-800 px-2 py-0.5 rounded-full shrink-0">
               {chordTapCount} tapped
             </span>
           )}
@@ -133,11 +133,11 @@ export default function ChallengePrompt({
           disabled={isPlaying}
           aria-label="Replay"
           className={[
-            "flex items-center gap-1.5 px-4 py-2 rounded-full font-semibold text-white text-sm",
+            "flex items-center gap-1.5 px-4 py-2 rounded-full font-semibold text-sm",
             "transition-colors shrink-0",
             isPlaying
-              ? "bg-zinc-700 opacity-50 cursor-not-allowed"
-              : "bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700",
+              ? "bg-zinc-700 opacity-50 cursor-not-allowed text-white"
+              : "bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-black",
           ].join(" ")}
         >
           <span aria-hidden="true">🔁</span>

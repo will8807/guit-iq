@@ -47,7 +47,7 @@ export default function SessionComplete({
 
   return (
     <main
-      className="min-h-screen bg-zinc-900 text-white flex flex-col items-center justify-center gap-8 p-6"
+      className="min-h-screen bg-[#100c06] text-white flex flex-col items-center justify-center gap-8 p-6"
       data-testid="session-complete"
     >
       {/* Grade emoji + heading */}
@@ -128,7 +128,7 @@ export default function SessionComplete({
       <div className="flex flex-col gap-3 w-full max-w-xs">
         <button
           onClick={onPlayAgain}
-          className="py-4 bg-green-600 hover:bg-green-500 rounded-full text-lg font-bold transition-colors"
+          className="py-4 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 rounded-full text-lg font-bold text-black transition-colors"
         >
           Play Again
         </button>

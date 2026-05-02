@@ -33,7 +33,7 @@ export default function ProgressPage() {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-900 text-white flex flex-col items-center gap-8 p-6 pt-10">
+    <main className="min-h-screen bg-[#100c06] text-white flex flex-col items-center gap-8 p-6 pt-10">
       <div className="flex items-center justify-between w-full max-w-sm">
         <Link href="/" className="text-zinc-400 hover:text-white text-sm">
           ← Home
@@ -85,7 +85,7 @@ export default function ProgressPage() {
                 </div>
                 <div className="h-2 bg-zinc-700 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-indigo-500 rounded-full transition-all"
+                    className="h-full bg-amber-500 rounded-full transition-all"
                     style={{ width: `${pct}%` }}
                     role="progressbar"
                     aria-valuenow={pct}
@@ -113,7 +113,7 @@ export default function ProgressPage() {
       <div className="w-full max-w-sm flex flex-col gap-3 mt-auto pt-4">
         <Link
           href="/session"
-          className="w-full text-center py-4 bg-indigo-600 hover:bg-indigo-500 rounded-full font-bold text-lg transition-colors"
+          className="w-full text-center py-4 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 rounded-full font-bold text-lg text-black transition-colors"
         >
           Start Session
         </Link>
