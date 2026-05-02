@@ -85,7 +85,7 @@ export default function ProgressPage() {
                 </div>
                 <div className="h-2 bg-zinc-700 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-amber-500 rounded-full transition-all"
+                    className="h-full bg-rust-500 rounded-full transition-all"
                     style={{ width: `${pct}%` }}
                     role="progressbar"
                     aria-valuenow={pct}
@@ -113,7 +113,7 @@ export default function ProgressPage() {
       <div className="w-full max-w-sm flex flex-col gap-3 mt-auto pt-4">
         <Link
           href="/session"
-          className="w-full text-center py-4 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 rounded-full font-bold text-lg text-black transition-colors"
+          className="w-full text-center py-4 bg-rust-500 hover:bg-rust-400 active:bg-rust-600 rounded-full font-bold text-lg text-white transition-colors shadow-lg shadow-rust-700/40"
         >
           Start Session
         </Link>
@@ -138,3 +138,5 @@ function StatCard({ label, value, testId }: { label: string; value: string; test
     </div>
   );
 }
+
+

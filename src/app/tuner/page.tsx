@@ -104,7 +104,7 @@ export default function TunerPage() {
         ) : (
           <button
             onClick={start}
-            className="w-full py-4 rounded-full bg-amber-500 hover:bg-amber-400 active:bg-amber-600 font-bold text-lg text-black transition-colors"
+            className="w-full py-4 rounded-full bg-rust-500 hover:bg-rust-400 active:bg-rust-600 font-bold text-lg text-white transition-colors shadow-lg shadow-rust-700/40"
           >
             {error ? "Try Again" : "Start Tuner"}
           </button>
@@ -124,13 +124,13 @@ export default function TunerPage() {
                   key={gs.string}
                   className={`flex-1 flex flex-col items-center py-2 rounded-lg transition-colors ${
                     isNearest
-                      ? "bg-amber-900/40 border border-amber-500"
+                      ? "bg-rust-800/40 border border-rust-500"
                       : "bg-zinc-800"
                   }`}
                 >
                   <span
                     className={`text-xs font-bold ${
-                      isNearest ? "text-amber-300" : "text-zinc-400"
+                      isNearest ? "text-rust-300" : "text-zinc-400"
                     }`}
                   >
                     {gs.note}
@@ -145,3 +145,5 @@ export default function TunerPage() {
     </main>
   );
 }
+
+

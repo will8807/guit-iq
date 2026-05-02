@@ -114,15 +114,15 @@ export default function ChallengePrompt({
           <p className="text-sm font-semibold text-white">{promptText}</p>
 
           {/* Step indicator for interval challenges */}
-          {challengeType === "find-the-interval" && !isPlaying && (
-            <span className="text-xs text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded-full shrink-0">
+          {challengeType === "find-the-interval" && (
+            <span className={`text-xs text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded-full shrink-0 transition-opacity ${isPlaying ? "opacity-0" : "opacity-100"}`}>
               {intervalStep}/2
             </span>
           )}
 
           {/* Tap counter for chord/find-all challenges */}
-          {(challengeType === "find-the-chord" || challengeType === "find-all-positions") && !isPlaying && chordTapCount > 0 && (
-            <span className="text-xs text-amber-300 bg-zinc-800 px-2 py-0.5 rounded-full shrink-0">
+          {(challengeType === "find-the-chord" || challengeType === "find-all-positions") && chordTapCount > 0 && (
+            <span className={`text-xs text-rust-300 bg-zinc-800 px-2 py-0.5 rounded-full shrink-0 transition-opacity ${isPlaying ? "opacity-0" : "opacity-100"}`}>
               {chordTapCount} tapped
             </span>
           )}
@@ -133,11 +133,11 @@ export default function ChallengePrompt({
           disabled={isPlaying}
           aria-label="Replay"
           className={[
-            "flex items-center gap-1.5 px-4 py-2 rounded-full font-semibold text-sm",
-            "transition-colors shrink-0",
+            "flex items-center justify-center gap-1.5 px-4 py-2 rounded-full font-medium text-sm",
+            "transition-colors shrink-0 border min-w-[100px]",
             isPlaying
-              ? "bg-zinc-700 opacity-50 cursor-not-allowed text-white"
-              : "bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-black",
+              ? "border-zinc-600 text-zinc-500 cursor-not-allowed"
+              : "border-rust-500 text-rust-400 hover:bg-rust-500/10 active:bg-rust-500/20",
           ].join(" ")}
         >
           <span aria-hidden="true">🔁</span>
@@ -145,20 +145,20 @@ export default function ChallengePrompt({
         </button>
 
         {/* Done button — shown for chord/interval/find-all challenges */}
-        {!isPlaying && sameStringHint && (
-          <span className="text-xs text-amber-400 shrink-0">
+        {sameStringHint && (
+          <span className={`text-xs text-rust-300 shrink-0 transition-opacity ${isPlaying ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
             ✓ Try another string
           </span>
         )}
-        {!isPlaying && onDone && !sameStringHint && (
+        {onDone && !sameStringHint && (
           <button
             onClick={onDone}
-            disabled={doneDisabled}
+            disabled={doneDisabled || isPlaying}
             className={[
-              "px-4 py-2 rounded-full font-semibold text-white text-sm transition-colors shrink-0",
-              doneDisabled
-                ? "bg-zinc-700 opacity-40 cursor-not-allowed"
-                : "bg-green-600 hover:bg-green-500 active:bg-green-700",
+              "px-4 py-2 rounded-full font-semibold text-sm transition-colors shrink-0",
+              doneDisabled || isPlaying
+                ? "bg-zinc-700 text-zinc-500 opacity-40 cursor-not-allowed"
+                : "bg-rust-500 hover:bg-rust-400 active:bg-rust-600 text-white shadow-md shadow-rust-700/40",
             ].join(" ")}
           >
             {doneLabel}
@@ -166,12 +166,13 @@ export default function ChallengePrompt({
         )}
 
         {/* Hint button — only shown when onHint is provided and level < 2 */}
-        {!isPlaying && onHint && hintLevel < 2 && (
+        {onHint && hintLevel < 2 && (
           <button
             onClick={onHint}
+            disabled={isPlaying}
             aria-label="Hint"
             title={hintLevel === 0 ? "Reveal name" : "Reveal a position"}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-700 hover:bg-zinc-600 text-amber-400 text-sm transition-colors shrink-0"
+            className={`w-8 h-8 flex items-center justify-center rounded-full bg-zinc-700 hover:bg-zinc-600 text-rust-300 text-sm transition-colors shrink-0 ${isPlaying ? "opacity-0 pointer-events-none" : ""}`}
           >
             💡
           </button>
@@ -179,7 +180,7 @@ export default function ChallengePrompt({
       </div>
 
       {/* Show Root: display note/chord name as a text badge */}
-      {rootNote && !isPlaying && (
+      {rootNote && (
         <div className="flex items-center gap-2">
           <span className="text-xs text-zinc-500 uppercase tracking-wide">
             {challengeType === "find-the-interval"
@@ -189,7 +190,7 @@ export default function ChallengePrompt({
                 : "Note"}
           </span>
           <span
-            className="text-sm font-bold text-amber-400 bg-zinc-800 px-2.5 py-0.5 rounded-md tracking-wide"
+            className="text-sm font-bold text-rust-300 bg-zinc-800 px-2.5 py-0.5 rounded-md tracking-wide"
             data-testid={challengeType === "find-the-chord" ? "chord-label" : undefined}
           >
             {rootNote}
@@ -198,10 +199,10 @@ export default function ChallengePrompt({
       )}
 
       {/* Hint name badge (level 1+) — only shown when Show Root is off */}
-      {!rootNote && hintLevel >= 1 && hintName && !isPlaying && (
+      {!rootNote && hintLevel >= 1 && hintName && (
         <div className="flex items-center gap-2">
-          <span className="text-xs text-amber-600 uppercase tracking-wide">Hint</span>
-          <span className="text-sm font-bold text-amber-300 bg-zinc-800 px-2.5 py-0.5 rounded-md tracking-wide">
+          <span className="text-xs text-rust-400 uppercase tracking-wide">Hint</span>
+          <span className="text-sm font-bold text-rust-300 bg-zinc-800 px-2.5 py-0.5 rounded-md tracking-wide">
             {hintName}
           </span>
           {hintLevel === 1 && (
@@ -212,3 +213,5 @@ export default function ChallengePrompt({
     </div>
   );
 }
+
+

@@ -84,7 +84,7 @@ export default function SessionComplete({
               accuracy >= 80
                 ? "text-green-400"
                 : accuracy >= 60
-                  ? "text-amber-400"
+                  ? "text-rust-300"
                   : "text-red-400",
             ].join(" ")}
             data-testid="accuracy"
@@ -128,7 +128,7 @@ export default function SessionComplete({
       <div className="flex flex-col gap-3 w-full max-w-xs">
         <button
           onClick={onPlayAgain}
-          className="py-4 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 rounded-full text-lg font-bold text-black transition-colors"
+          className="py-4 bg-rust-500 hover:bg-rust-400 active:bg-rust-600 rounded-full text-lg font-bold text-white transition-colors shadow-lg shadow-rust-700/40"
         >
           Play Again
         </button>
@@ -142,3 +142,5 @@ export default function SessionComplete({
     </main>
   );
 }
+
+

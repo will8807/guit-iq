@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 const STRINGS = [1, 2, 3, 4, 5, 6];
 
@@ -43,13 +43,30 @@ function DecorativeFretboard() {
   );
 }
 
-export default function Home() {
+interface ColorVariantProps {
+  name: string;
+  /** Tailwind classes for the big CTA button */
+  ctaClass: string;
+  /** Tailwind text colour for the "Guit" highlight */
+  accentTextClass: string;
+  /** Tailwind classes for the secondary nav icon buttons on hover */
+  navHoverClass: string;
+  /** Tailwind shadow tint on the CTA button, e.g. "shadow-violet-900/40" */
+  ctaShadowClass: string;
+}
+
+export default function ColorVariant({
+  ctaClass,
+  accentTextClass,
+  navHoverClass,
+  ctaShadowClass,
+}: ColorVariantProps) {
   return (
     <main className="min-h-screen bg-[#100c06] text-white flex flex-col items-center justify-center gap-6 px-6 py-12">
       {/* Brand */}
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-5xl font-black tracking-tight">
-          <span className="text-rust-300">Guit</span>IQ
+          <span className={accentTextClass}>Guit</span>IQ
         </h1>
         <p className="text-zinc-400 text-base max-w-xs">
           The ear-training app built for guitarists
@@ -61,32 +78,36 @@ export default function Home() {
 
       {/* Feature pills */}
       <div className="flex flex-wrap justify-center gap-2 max-w-xs">
-        {["🎵 Audio-first", "🎯 Find the note", "🎸 Chord training", "📈 Track progress"].map((f) => (
-          <span key={f} className="px-3 py-1.5 bg-zinc-800 rounded-full text-xs text-zinc-300 font-medium">
-            {f}
-          </span>
-        ))}
+        {["🎵 Audio-first", "🎯 Find the note", "🎸 Chord training", "📈 Track progress"].map(
+          (f) => (
+            <span
+              key={f}
+              className="px-3 py-1.5 bg-zinc-800 rounded-full text-xs text-zinc-300 font-medium"
+            >
+              {f}
+            </span>
+          )
+        )}
       </div>
 
       {/* CTA card */}
       <div className="w-full max-w-xs bg-zinc-900 border border-zinc-700/50 rounded-2xl p-5 flex flex-col gap-3 shadow-xl">
         <Link
           href="/session"
-          className="w-full text-center py-4 bg-rust-500 hover:bg-rust-400 active:bg-rust-600 rounded-xl text-lg font-black text-white transition-all shadow-md shadow-rust-800/40 hover:-translate-y-0.5 active:translate-y-0"
+          className={`w-full text-center py-4 rounded-xl text-lg font-black transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 ${ctaClass} ${ctaShadowClass}`}
         >
-          Start Training
+          🎸 Start Training
         </Link>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {[
             { href: "/tuner", icon: "🎵", label: "Tuner" },
             { href: "/progress", icon: "📈", label: "Progress" },
             { href: "/settings", icon: "⚙️", label: "Settings" },
-            { href: "/demo", icon: "✨", label: "UI Showcase" },
           ].map(({ href, icon, label }) => (
             <Link
               key={href}
               href={href}
-              className="flex flex-col items-center gap-1 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-colors text-zinc-400 hover:text-white"
+              className={`flex flex-col items-center gap-1 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-colors text-zinc-400 ${navHoverClass}`}
             >
               <span className="text-xl">{icon}</span>
               <span className="text-[10px] font-medium">{label}</span>
@@ -97,4 +118,3 @@ export default function Home() {
     </main>
   );
 }
-

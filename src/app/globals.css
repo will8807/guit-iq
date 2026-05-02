@@ -10,6 +10,15 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* ── Custom rust/burnt-orange palette centred on #C24A0A ────────────── */
+  --color-rust-200: #f0c4a8;
+  --color-rust-300: #e09070;
+  --color-rust-400: #d06838;
+  --color-rust-500: #c24a0a;
+  --color-rust-600: #a03d08;
+  --color-rust-700: #7e3006;
+  --color-rust-800: #5c2204;
 }
 
 @media (prefers-color-scheme: dark) {

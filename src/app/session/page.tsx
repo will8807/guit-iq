@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useCallback, useState } from "react";
 import { useSessionStore } from "@/store/sessionStore";
 import { useSettingsStore } from "@/store/settingsStore";
-import { initAudio, playNote, playChord } from "@/lib/audio/engine";
+import { initAudio, playNote, playChord, playFeedbackChime } from "@/lib/audio/engine";
 import Fretboard, { type FretHighlight } from "@/components/Fretboard";
 import ChallengePrompt from "@/components/ChallengePrompt";
 import ChallengeFeedback from "@/components/ChallengeFeedback";
@@ -94,6 +95,13 @@ export default function SessionPage() {
       playChallenge();
     }
   }, [phase, playChallenge]);
+
+  // Play feedback chime when answer is evaluated
+  useEffect(() => {
+    if (phase === "feedback" && lastResult) {
+      playFeedbackChime(lastResult.correct ? "correct" : "incorrect").catch(() => {});
+    }
+  }, [phase, lastResult]);
 
   // Show promotion toast for 3 seconds then clear
   useEffect(() => {
@@ -267,7 +275,7 @@ export default function SessionPage() {
   if (phase === "idle") {
     return (
       <main className="min-h-screen bg-[#100c06] text-white flex flex-col items-center justify-center gap-8 p-6">
-        <h1 className="text-3xl font-bold"><span className="text-amber-400">Guit</span>IQ</h1>
+        <h1 className="text-3xl font-bold"><span className="text-rust-300">Guit</span>IQ</h1>
 
         {score.total > 0 && (
           <p className="text-zinc-400">
@@ -284,7 +292,7 @@ export default function SessionPage() {
               className={[
                 "py-3 rounded-lg font-semibold capitalize transition-colors",
                 difficulty === d
-                  ? "bg-amber-500 text-black"
+                  ? "bg-rust-500 text-white"
                   : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700",
               ].join(" ")}
             >
@@ -308,7 +316,7 @@ export default function SessionPage() {
             onClick={() => setShowRoot(!showRoot)}
             className={[
               "relative w-12 h-6 rounded-full transition-colors shrink-0",
-              showRoot ? "bg-amber-500" : "bg-zinc-600",
+              showRoot ? "bg-rust-500" : "bg-zinc-600",
             ].join(" ")}
           >
             <span
@@ -322,7 +330,7 @@ export default function SessionPage() {
 
         <button
           onClick={handleStart}
-          className="px-8 py-4 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 rounded-full text-xl font-bold text-black"
+          className="px-8 py-4 bg-rust-500 hover:bg-rust-400 active:bg-rust-600 rounded-full text-xl font-bold text-white shadow-lg shadow-rust-700/40"
         >
           Play
         </button>
@@ -351,7 +359,7 @@ export default function SessionPage() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-amber-500 text-black px-6 py-3 rounded-full font-semibold shadow-lg text-sm animate-bounce"
+          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-rust-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg text-sm animate-bounce"
         >
           🎉 Levelled up to <span className="capitalize">{promotedDifficulty}</span>!
         </div>
@@ -359,10 +367,10 @@ export default function SessionPage() {
 
       {/* Header */}
       <div className="flex items-center justify-between pt-2">
-        <h1 className="text-lg font-bold"><span className="text-amber-400">Guit</span>IQ</h1>
+        <h1 className="text-lg font-bold"><span className="text-rust-300">Guit</span>IQ</h1>
         <div className="flex items-center gap-3">
           {streak >= 2 && (
-            <span className="text-sm text-amber-400 font-semibold" aria-label={`${streak} streak`}>
+            <span className="text-sm text-rust-300 font-semibold" aria-label={`${streak} streak`}>
               🔥 {streak}
             </span>
           )}
@@ -374,6 +382,14 @@ export default function SessionPage() {
           >
             {layout === "portrait" ? "⇄" : "⇅"}
           </button>
+          <Link
+            href="/settings"
+            aria-label="Settings"
+            title="Settings"
+            className="text-zinc-400 hover:text-zinc-200 transition-colors text-lg"
+          >
+            ⚙️
+          </Link>
           <span className="text-sm text-zinc-400">
             {score.correct}/{score.total}
           </span>
@@ -397,7 +413,7 @@ export default function SessionPage() {
               challenge?.type === "find-the-chord" ? chordTaps.length : 0
             }
             rootNote={
-              showRoot && !isPlaying
+              showRoot
                 ? challenge?.type === "find-the-interval"
                   ? (challenge as { rootNote: string }).rootNote
                   : challenge?.type === "find-the-note"
@@ -406,6 +422,26 @@ export default function SessionPage() {
                       ? (challenge as { chordLabel: string }).chordLabel
                       : undefined
                 : undefined
+            }
+            onDone={
+              phase === "awaiting" && challenge?.type === "find-the-chord"
+                ? submitChordAnswer
+                : phase === "awaiting" && challenge?.type === "find-the-interval" && intervalSecondTap
+                  ? submitIntervalAnswer
+                  : undefined
+            }
+            doneLabel={
+              challenge?.type === "find-the-chord"
+                ? `Done (${chordTaps.length} tap${chordTaps.length !== 1 ? "s" : ""})`
+                : "Done"
+            }
+            doneDisabled={
+              challenge?.type === "find-the-chord" && chordTaps.length === 0
+            }
+            sameStringHint={
+              phase === "awaiting" &&
+              challenge?.type === "find-the-interval" &&
+              intervalSameStringHint
             }
           />
         )}
@@ -417,43 +453,6 @@ export default function SessionPage() {
           />
         )}
       </div>
-
-      {/* Done button — for chord and interval challenges while awaiting */}
-      {phase === "awaiting" && challenge?.type === "find-the-chord" && (
-        <div className="flex justify-center">
-          <button
-            onClick={submitChordAnswer}
-            disabled={chordTaps.length === 0}
-            className={[
-              "px-8 py-3 rounded-full font-semibold text-white text-sm transition-colors",
-              chordTaps.length > 0
-                ? "bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-black"
-                : "bg-zinc-700 opacity-40 cursor-not-allowed",
-            ].join(" ")}
-          >
-            Done ({chordTaps.length} tap{chordTaps.length !== 1 ? "s" : ""})
-          </button>
-        </div>
-      )}
-      {phase === "awaiting" && challenge?.type === "find-the-interval" && intervalSecondTap && (
-        <div className="flex justify-center">
-          <button
-            onClick={submitIntervalAnswer}
-            className="px-8 py-3 rounded-full font-semibold text-black text-sm transition-colors bg-amber-500 hover:bg-amber-400 active:bg-amber-600"
-          >
-            Done
-          </button>
-        </div>
-      )}
-
-      {/* Same-string hint — shown in place of Done when pitch is right but string is wrong */}
-      {phase === "awaiting" && challenge?.type === "find-the-interval" && intervalSameStringHint && (
-        <div className="flex justify-center">
-          <p className="text-sm text-amber-400 text-center px-4">
-            ✓ Correct note — try it on a different string
-          </p>
-        </div>
-      )}
 
       {/* Fretboard */}
       <div className="bg-zinc-800 rounded-xl p-3 flex-1">
@@ -467,3 +466,5 @@ export default function SessionPage() {
     </main>
   );
 }
+
+

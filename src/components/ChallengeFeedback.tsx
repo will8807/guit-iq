@@ -54,7 +54,7 @@ export default function ChallengeFeedback({
 
         {/* Hinted badge */}
         {hinted && (
-          <span className="text-xs text-amber-400 bg-zinc-800 px-2 py-0.5 rounded-full shrink-0">
+          <span className="text-xs text-rust-300 bg-zinc-800 px-2 py-0.5 rounded-full shrink-0">
             💡 hinted
           </span>
         )}
@@ -62,7 +62,7 @@ export default function ChallengeFeedback({
         {/* Next button */}
         <button
           onClick={onNext}
-          className="ml-auto px-5 py-2 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 rounded-full font-semibold text-black text-sm transition-colors shrink-0"
+          className="ml-auto px-5 py-2 bg-rust-500 hover:bg-rust-400 active:bg-rust-600 rounded-full font-semibold text-white text-sm transition-colors shrink-0 shadow-md shadow-rust-700/40"
         >
           Next →
         </button>
@@ -73,7 +73,7 @@ export default function ChallengeFeedback({
         <div className="flex items-center gap-3 px-1">
           <p className="text-xs text-zinc-400">
             That was a{" "}
-            <span className="text-amber-300 font-semibold">{ir.intervalName}</span>
+            <span className="text-rust-300 font-semibold">{ir.intervalName}</span>
           </p>
           {/* Per-note result pills */}
           <div className="ml-auto flex gap-2">
@@ -103,7 +103,7 @@ export default function ChallengeFeedback({
 
       {/* Same-string hint — shown only when the pitch was right but same string */}
       {ir?.secondSameString && (
-        <p className="text-xs text-amber-400 px-1">
+        <p className="text-xs text-rust-300 px-1">
           ✓ Correct note — try it on a different string
         </p>
       )}
@@ -114,11 +114,11 @@ export default function ChallengeFeedback({
           <div className="flex items-center gap-3">
             <p className="text-xs text-zinc-400">
               That was a{" "}
-              <span className="text-amber-300 font-semibold">{cr.chordLabel}</span>
+              <span className="text-rust-300 font-semibold">{cr.chordLabel}</span>
             </p>
             {/* Missed note count pill */}
             {cr.missedPitchClasses.size > 0 && (
-              <span className="ml-auto text-xs px-2 py-0.5 rounded-full font-medium bg-amber-900/60 text-amber-300">
+              <span className="ml-auto text-xs px-2 py-0.5 rounded-full font-medium bg-rust-800/60 text-rust-300">
                 {cr.missedPitchClasses.size} missed
               </span>
             )}
@@ -156,10 +156,10 @@ export default function ChallengeFeedback({
           <div className="flex items-center gap-3">
             <p className="text-xs text-zinc-400">
               That was{" "}
-              <span className="text-amber-300 font-semibold">{far.targetNote}</span>
+              <span className="text-rust-300 font-semibold">{far.targetNote}</span>
             </p>
             {far.missedPositions.length > 0 && (
-              <span className="ml-auto text-xs px-2 py-0.5 rounded-full font-medium bg-amber-900/60 text-amber-300">
+              <span className="ml-auto text-xs px-2 py-0.5 rounded-full font-medium bg-rust-800/60 text-rust-300">
                 {far.missedPositions.length} missed
               </span>
             )}
@@ -192,3 +192,5 @@ export default function ChallengeFeedback({
     </div>
   );
 }
+
+

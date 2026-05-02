@@ -67,7 +67,7 @@ const HIGHLIGHT_CLASSES: Record<HighlightVariant, string> = {
 //   - vivid coloured border ring
 //   - outer coloured halo glow
 // Note dot style — matches the correct/incorrect badge style from ChallengeFeedback:
-//   bg-green-800/60 border-green-600 | bg-red-900/60 border-red-600 | bg-amber-900/60 border-amber-500
+//   bg-green-800/60 border-green-600 | bg-red-900/60 border-red-600 | bg-rust-800/60 border-rust-500
 const HIGHLIGHT_STYLES: Record<HighlightVariant, React.CSSProperties> = {
   correct: {
     background: "#166534",                    // green-800 solid
@@ -89,7 +89,7 @@ const HIGHLIGHT_STYLES: Record<HighlightVariant, React.CSSProperties> = {
 const LABEL_CLASSES: Record<HighlightVariant, string> = {
   correct: "text-green-300 font-semibold",
   incorrect: "text-red-300 font-semibold",
-  hint: "text-amber-300 font-semibold",
+  hint: "text-rust-300 font-semibold",
 };
 
 const SINGLE_DOT_FRETS = new Set([3, 5, 7, 9]);

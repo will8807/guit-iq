@@ -225,7 +225,8 @@ export async function playFeedbackChime(
       volume: -10,
     }).toDestination();
 
-    const now = Tone.now();
+    // +0.01 lookahead prevents Chrome from missing notes scheduled at exactly "now"
+    const now = Tone.now() + 0.01;
     chime.triggerAttackRelease("C5", "8n", now);
     chime.triggerAttackRelease("E5", "8n", now + 0.1);
     chime.triggerAttackRelease("G5", "8n", now + 0.2);
@@ -239,7 +240,8 @@ export async function playFeedbackChime(
       volume: -14,
     }).toDestination();
 
-    const now = Tone.now();
+    // +0.01 lookahead prevents Chrome from missing notes scheduled at exactly "now"
+    const now = Tone.now() + 0.01;
     chime.triggerAttackRelease("C3", "4n", now);
     chime.triggerAttackRelease("Bb2", "4n", now + 0.12);
 
