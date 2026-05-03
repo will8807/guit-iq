@@ -240,9 +240,9 @@ describe("playFeedbackChime", () => {
   it("plays a high note for correct feedback", async () => {
     await playFeedbackChime("correct");
     // Correct: ascending arpeggio C5 → E5 → G5 (+0.01 lookahead offset)
-    expect(mockTriggerAttackRelease).toHaveBeenCalledWith("C5", "8n", 0.01);
-    expect(mockTriggerAttackRelease).toHaveBeenCalledWith("E5", "8n", 0.11);
-    expect(mockTriggerAttackRelease).toHaveBeenCalledWith("G5", "8n", 0.21);
+    expect(mockTriggerAttackRelease).toHaveBeenCalledWith("C5", "8n", expect.closeTo(0.01, 5));
+    expect(mockTriggerAttackRelease).toHaveBeenCalledWith("E5", "8n", expect.closeTo(0.11, 5));
+    expect(mockTriggerAttackRelease).toHaveBeenCalledWith("G5", "8n", expect.closeTo(0.21, 5));
   });
 
   it("plays a low note for incorrect feedback", async () => {

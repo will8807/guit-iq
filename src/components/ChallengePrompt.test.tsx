@@ -90,7 +90,7 @@ describe("ChallengePrompt", () => {
     expect(screen.getByText("Root")).toBeDefined();
   });
 
-  it("hides note badge while audio is playing even if rootNote is set", () => {
+  it("keeps note badge visible while audio is playing (stays in DOM for layout stability)", () => {
     render(
       <ChallengePrompt
         isPlaying={true}
@@ -99,7 +99,7 @@ describe("ChallengePrompt", () => {
         rootNote="A3"
       />
     );
-    expect(screen.queryByText("A3")).toBeNull();
+    expect(screen.getByText("A3")).toBeDefined();
   });
 
   it("shows interval name in prompt when intervalName is provided", () => {
@@ -135,11 +135,12 @@ describe("ChallengePrompt", () => {
     expect(screen.getByText("3 tapped")).toBeDefined();
   });
 
-  it("does not show tap counter while audio is playing", () => {
+  it("keeps tap counter visible (opacity-0) while audio is playing for layout stability", () => {
     render(
       <ChallengePrompt isPlaying={true} onReplay={vi.fn()} challengeType="find-the-chord" chordTapCount={2} />
     );
-    expect(screen.queryByText(/tapped/)).toBeNull();
+    // Element stays in DOM (opacity-0) to prevent layout shift
+    expect(screen.getByText(/tapped/)).toBeDefined();
   });
 
   it("shows 'Chord' label when Show Root ON for chord challenge", () => {
@@ -160,7 +161,7 @@ describe("ChallengePrompt", () => {
     expect(screen.queryByText(/\/2/)).toBeNull();
   });
 
-  it("hides chord name badge while audio is playing even if rootNote is set", () => {
+  it("keeps chord name badge visible while audio is playing (stays in DOM for layout stability)", () => {
     render(
       <ChallengePrompt
         isPlaying={true}
@@ -169,6 +170,6 @@ describe("ChallengePrompt", () => {
         rootNote="G Minor"
       />
     );
-    expect(screen.queryByText("G Minor")).toBeNull();
+    expect(screen.getByText("G Minor")).toBeDefined();
   });
 });
