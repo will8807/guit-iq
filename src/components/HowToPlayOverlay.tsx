@@ -25,6 +25,7 @@ const INSTRUCTIONS: Record<Props["challengeType"], { title: string; steps: strin
       "🔊 Two notes will play — root, then second",
       "🎸 Tap the root note on the fretboard",
       "🎸 Then tap the second note",
+      "✅ Press Done to submit your answer",
       "🔁 Use Replay to hear the pair again",
     ],
   },
