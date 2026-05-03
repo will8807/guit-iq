@@ -45,6 +45,7 @@ export default function SessionPage() {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const { showRoot, setShowRoot, intervalMix, chordMix } = useSettingsStore();
 
@@ -357,7 +358,7 @@ export default function SessionPage() {
     <main className="min-h-screen w-full bg-[#100c06] text-white flex flex-col p-4 gap-4 max-w-2xl mx-auto">
       {/* How to play overlay — shown once on first session */}
       {phase === "awaiting" && challenge && (
-        <HowToPlayOverlay challengeType={challenge.type} onDismiss={() => {}} />
+        <HowToPlayOverlay challengeType={challenge.type} forceOpen={helpOpen} onDismiss={() => setHelpOpen(false)} />
       )}
 
       {/* Promotion toast */}
@@ -396,6 +397,16 @@ export default function SessionPage() {
           >
             ⚙️
           </Link>
+          {(phase === "awaiting" || phase === "playing") && (
+            <button
+              onClick={() => setHelpOpen(true)}
+              aria-label="How to play"
+              title="How to play"
+              className="w-7 h-7 flex items-center justify-center rounded-full border border-zinc-600 text-zinc-400 hover:text-white hover:border-zinc-400 transition-colors text-xs font-bold"
+            >
+              ?
+            </button>
+          )}
           <span className="text-sm text-zinc-400">
             {score.correct}/{score.total}
           </span>
