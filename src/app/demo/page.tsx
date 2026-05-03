@@ -15,6 +15,7 @@
 import { useState, useCallback } from "react";
 import Fretboard, { type FretHighlight } from "@/components/Fretboard";
 import ChallengeFeedback from "@/components/ChallengeFeedback";
+import HowToPlayOverlay from "@/components/HowToPlayOverlay";
 import type { EvaluationResult } from "@/lib/challenges/findTheNote";
 import type { ChordEvaluationResult } from "@/lib/challenges/findTheChord";
 import type { FindAllEvaluationResult } from "@/lib/challenges/findAllPositions";
@@ -159,6 +160,41 @@ const HIGHLIGHT_SHOWCASE: FretHighlight[] = [
   // Bare incorrect dot
   { string: 6, fret: 2, variant: "incorrect" },
 ];
+
+// ─── How To Play showcase ─────────────────────────────────────────────────────
+
+const CHALLENGE_TYPES = [
+  { type: "find-the-note", label: "Find the Note" },
+  { type: "find-the-interval", label: "Find the Interval" },
+  { type: "find-the-chord", label: "Find the Chord" },
+  { type: "find-all-positions", label: "Find All Positions" },
+] as const;
+
+function HowToPlayShowcase() {
+  const [active, setActive] = useState<typeof CHALLENGE_TYPES[number]["type"] | null>(null);
+  return (
+    <>
+      <div className="flex flex-wrap gap-2">
+        {CHALLENGE_TYPES.map(({ type, label }) => (
+          <button
+            key={type}
+            onClick={() => setActive(type)}
+            className="px-3 py-1.5 text-sm bg-zinc-800 hover:bg-zinc-700 rounded-full text-zinc-300 transition-colors border border-zinc-700"
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {active && (
+        <HowToPlayOverlay
+          challengeType={active}
+          forceOpen={true}
+          onDismiss={() => setActive(null)}
+        />
+      )}
+    </>
+  );
+}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -335,6 +371,15 @@ export default function DemoPage() {
         >
           🎸 Open Tuner →
         </Link>
+      </section>
+
+      {/* ── 6. How To Play overlays ─────────────────────────────────── */}
+      <section aria-label="How To Play Overlays" data-section="how-to-play">
+        <SectionHeading id="how-to-play">How To Play Overlays</SectionHeading>
+        <p className="text-xs text-zinc-400 mb-4">
+          Shown to the user the first time they encounter each challenge type. Click a button to preview.
+        </p>
+        <HowToPlayShowcase />
       </section>
 
       {/* Footer nav */}
