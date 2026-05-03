@@ -33,8 +33,8 @@ const INSTRUCTIONS: Record<Props["challengeType"], { title: string; steps: strin
     steps: [
       "🔊 Listen to the chord that plays",
       "🎸 Tap every note of the chord on the fretboard",
-      "✅ Press Done when you've tapped them all",
       "🔁 Use Replay to hear it again",
+      "✅ Press Done when you've tapped them all",
     ],
   },
   "find-all-positions": {
@@ -42,6 +42,7 @@ const INSTRUCTIONS: Record<Props["challengeType"], { title: string; steps: strin
     steps: [
       "🔊 Listen to the note that plays",
       "🎸 Find every place that note appears on the fretboard",
+      "🔁 Use Replay to hear it again",
       "✅ Press Done when you've found them all",
     ],
   },
