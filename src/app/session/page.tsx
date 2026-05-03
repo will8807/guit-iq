@@ -8,6 +8,7 @@ import { initAudio, playNote, playChord, playFeedbackChime } from "@/lib/audio/e
 import Fretboard, { type FretHighlight } from "@/components/Fretboard";
 import ChallengePrompt from "@/components/ChallengePrompt";
 import ChallengeFeedback from "@/components/ChallengeFeedback";
+import HowToPlayOverlay from "@/components/HowToPlayOverlay";
 import SessionComplete from "@/components/SessionComplete";
 import { useOrientation, type FretboardLayout } from "@/hooks/useOrientation";
 import type { Difficulty } from "@/lib/challenges/findTheNote";
@@ -354,6 +355,11 @@ export default function SessionPage() {
   // Step 4: active challenge (playing / awaiting / feedback)
   return (
     <main className="min-h-screen w-full bg-[#100c06] text-white flex flex-col p-4 gap-4 max-w-2xl mx-auto">
+      {/* How to play overlay — shown once on first session */}
+      {phase === "awaiting" && challenge && (
+        <HowToPlayOverlay challengeType={challenge.type} onDismiss={() => {}} />
+      )}
+
       {/* Promotion toast */}
       {toastVisible && promotedDifficulty && (
         <div
