@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const STORAGE_KEY = "guitiq_how_to_play_seen";
+const STORAGE_KEY = (type: Props["challengeType"]) => `guitiq_how_to_play_seen_${type}`;
 
 interface Props {
   challengeType: "find-the-note" | "find-the-interval" | "find-the-chord" | "find-all-positions";
@@ -50,7 +50,7 @@ export default function HowToPlayOverlay({ challengeType, onDismiss }: Props) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const seen = localStorage.getItem(STORAGE_KEY);
+    const seen = localStorage.getItem(STORAGE_KEY(challengeType));
     if (!seen) setVisible(true);
   }, []);
 
@@ -59,7 +59,7 @@ export default function HowToPlayOverlay({ challengeType, onDismiss }: Props) {
   const { title, steps } = INSTRUCTIONS[challengeType];
 
   function dismiss() {
-    localStorage.setItem(STORAGE_KEY, "1");
+    localStorage.setItem(STORAGE_KEY(challengeType), "1");
     setVisible(false);
     onDismiss();
   }
