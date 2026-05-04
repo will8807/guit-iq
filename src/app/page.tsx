@@ -133,7 +133,7 @@ export default function Home() {
       {/* ── Feature cards ──────────────────────────────────────────────────── */}
       <section className="px-5 py-12 flex flex-col gap-5 max-w-lg mx-auto">
         <p className="text-center text-sm text-zinc-400 font-medium">
-          Everything you need to develop perfect pitch on guitar.
+          Everything you need to sharpen your ear on guitar.
         </p>
         <div className="grid grid-cols-2 gap-3">
           {FEATURES.map(({ icon, label, description, color }) => (
