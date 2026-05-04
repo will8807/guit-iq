@@ -1,47 +1,6 @@
 ﻿import Link from "next/link";
 import Image from "next/image";
 
-// ─── Decorative mini fretboard ────────────────────────────────────────────────
-
-const STRINGS = [1, 2, 3, 4, 5, 6];
-
-function DecorativeFretboard() {
-  return (
-    <div
-      aria-hidden="true"
-      className="w-full h-12 rounded-lg overflow-hidden relative"
-      style={{
-        background: "linear-gradient(to bottom, #1a1008, #2a1c0e, #1a1008)",
-        boxShadow: "inset 0 2px 8px rgba(0,0,0,0.8)",
-      }}
-    >
-      {STRINGS.map((s) => (
-        <div
-          key={s}
-          className="absolute left-0 right-0"
-          style={{
-            top: `${(s / (STRINGS.length + 1)) * 100}%`,
-            height: s <= 2 ? "1px" : s <= 4 ? "1.5px" : "2px",
-            background:
-              s <= 2
-                ? "rgba(156,163,175,0.6)"
-                : s <= 4
-                  ? "rgba(176,168,152,0.6)"
-                  : "rgba(200,184,106,0.6)",
-          }}
-        />
-      ))}
-      {[20, 40, 60, 80].map((pct) => (
-        <div
-          key={pct}
-          className="absolute top-0 bottom-0"
-          style={{ left: `${pct}%`, width: "1px", background: "rgba(200,191,176,0.3)" }}
-        />
-      ))}
-    </div>
-  );
-}
-
 // ─── Feature cards ────────────────────────────────────────────────────────────
 
 const FEATURES = [
@@ -168,11 +127,6 @@ export default function Home() {
             </Link>
             <p className="text-center text-xs text-zinc-500">Free to start. No sign up required.</p>
           </div>
-        </div>
-
-        {/* Fretboard stripe at bottom of hero */}
-        <div className="relative z-10 px-5 pb-8">
-          <DecorativeFretboard />
         </div>
       </section>
 
