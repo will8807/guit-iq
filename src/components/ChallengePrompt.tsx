@@ -113,10 +113,10 @@ export default function ChallengePrompt({
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {/* Sound-wave indicator — visible while audio plays */}
           <div className={`flex items-center gap-[3px] h-4 shrink-0 transition-opacity ${isPlaying ? "opacity-100" : "opacity-0"}`} aria-hidden="true">
-            {[1,2,3,4,5].map((n) => (
+            {(["sound-bar-1","sound-bar-2","sound-bar-3","sound-bar-4","sound-bar-5"] as const).map((cls) => (
               <span
-                key={n}
-                className={`block w-[3px] rounded-full bg-rust-400 origin-center sound-bar-${n}`}
+                key={cls}
+                className={`block w-[3px] rounded-full bg-rust-400 origin-center ${cls}`}
                 style={{ height: "14px" }}
               />
             ))}

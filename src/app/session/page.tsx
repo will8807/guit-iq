@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
 import { useSessionStore } from "@/store/sessionStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { initAudio, playNote, playChord, playFeedbackChime } from "@/lib/audio/engine";
@@ -46,6 +46,9 @@ export default function SessionPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [overlayOpen, setOverlayOpen] = useState(false);
+  // Tracks whether a play was deferred because the how-to overlay was shown first
+  const deferredPlay = useRef(false);
 
   const { showRoot, setShowRoot, intervalMix, chordMix } = useSettingsStore();
 
@@ -93,10 +96,19 @@ export default function SessionPage() {
   // Auto-play when a new challenge starts
   useEffect(() => {
     if (phase === "playing") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      playChallenge();
+      const HOW_TO_KEY = `guitiq_how_to_play_seen_${challenge?.type}`;
+      const alreadySeen = typeof window !== "undefined" && !!localStorage.getItem(HOW_TO_KEY);
+      if (!alreadySeen && challenge) {
+        // Overlay will appear — defer the play until the user dismisses it
+        deferredPlay.current = true;
+        setOverlayOpen(true);
+      } else {
+        deferredPlay.current = false;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        playChallenge();
+      }
     }
-  }, [phase, playChallenge]);
+  }, [phase, playChallenge, challenge]);
 
   // Play feedback chime when answer is evaluated
   useEffect(() => {
@@ -360,8 +372,21 @@ export default function SessionPage() {
   return (
     <main className="min-h-screen w-full bg-[#100c06] text-white flex flex-col p-4 gap-4 max-w-2xl mx-auto">
       {/* How to play overlay — shown once on first session */}
-      {phase === "awaiting" && challenge && (
-        <HowToPlayOverlay challengeType={challenge.type} forceOpen={helpOpen} onDismiss={() => setHelpOpen(false)} />
+      {(phase === "playing" || phase === "awaiting") && challenge && (
+        <HowToPlayOverlay
+          challengeType={challenge.type}
+          forceOpen={helpOpen}
+          onOpen={() => setOverlayOpen(true)}
+          onDismiss={() => {
+            setHelpOpen(false);
+            setOverlayOpen(false);
+            // If audio was deferred while the overlay was showing, play now
+            if (deferredPlay.current) {
+              deferredPlay.current = false;
+              playChallenge();
+            }
+          }}
+        />
       )}
 
       {/* Promotion toast */}
