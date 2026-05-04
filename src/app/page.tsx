@@ -31,24 +31,25 @@ const FEATURES = [
 ];
 
 // ─── Testimonials ─────────────────────────────────────────────────────────────
-
-const TESTIMONIALS = [
-  {
-    quote: "Finally an ear training app that speaks guitarist.",
-    name: "Alex M.",
-    initials: "AM",
-  },
-  {
-    quote: "My fretboard knowledge has leveled up so fast.",
-    name: "Jason R.",
-    initials: "JR",
-  },
-  {
-    quote: "Simple, clean, and super effective. I use it every day.",
-    name: "Maya L.",
-    initials: "ML",
-  },
-];
+// TODO: replace with real testimonials before uncommenting
+//
+// const TESTIMONIALS = [
+//   {
+//     quote: "Finally an ear training app that speaks guitarist.",
+//     name: "Alex M.",
+//     initials: "AM",
+//   },
+//   {
+//     quote: "My fretboard knowledge has leveled up so fast.",
+//     name: "Jason R.",
+//     initials: "JR",
+//   },
+//   {
+//     quote: "Simple, clean, and super effective. I use it every day.",
+//     name: "Maya L.",
+//     initials: "ML",
+//   },
+// ];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -168,7 +169,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Testimonials ───────────────────────────────────────────────────── */}
+      {/* ── Testimonials — hidden until real ones are collected ─────────────
       <section className="px-5 py-8 flex flex-col gap-5 max-w-lg mx-auto">
         <p className="text-center text-sm text-zinc-400 font-medium">Loved by guitarists</p>
         <div className="flex flex-col gap-3">
@@ -188,6 +189,7 @@ export default function Home() {
           ))}
         </div>
       </section>
+      ── */}
 
       {/* ── Bottom CTA ─────────────────────────────────────────────────────── */}
       <section className="px-5 py-10 max-w-lg mx-auto">
