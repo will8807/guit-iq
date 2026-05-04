@@ -200,11 +200,13 @@ export default function SessionPage() {
       highlights.push({ ...tap, variant: "hint" });
     }
     // When Show Root is ON, also highlight root positions
-    // Exclude strings 1 (high e) and 2 (B) — a triad root on those strings
-    // leaves insufficient lower strings to voice the remaining chord tones.
+    // Prefer strings 3–6 (a triad root on high e / B leaves no room below),
+    // but fall back to strings 1–2 when the note only exists that high.
     if (showRoot && !isPlaying) {
-      for (const pos of getAllPositionsForNote(challenge.rootNote)) {
-        if (pos.string <= 2) continue; // skip high e and B strings
+      const allRootPositions = getAllPositionsForNote(challenge.rootNote);
+      const lowerPositions = allRootPositions.filter((p) => p.string > 2);
+      const rootPositions = lowerPositions.length > 0 ? lowerPositions : allRootPositions;
+      for (const pos of rootPositions) {
         const alreadyTapped = chordTaps.some(
           (t) => t.string === pos.string && t.fret === pos.fret,
         );
