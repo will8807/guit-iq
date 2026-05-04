@@ -118,13 +118,32 @@ export default function Home() {
           </div>
 
           {/* Primary CTA */}
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
             <Link
               href="/session"
               className="w-full text-center py-4 bg-rust-500 hover:bg-rust-400 active:bg-rust-600 rounded-xl text-lg font-black text-white transition-all shadow-lg shadow-rust-800/50 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
             >
               <span>🎸</span> Start Training <span className="text-rust-200">→</span>
             </Link>
+
+            {/* Secondary nav */}
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { href: "/tuner", icon: "🎵", label: "Tuner" },
+                { href: "/progress", icon: "📈", label: "Progress" },
+                { href: "/settings", icon: "⚙️", label: "Settings" },
+              ].map(({ href, icon, label }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="flex flex-col items-center gap-1.5 py-3 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 rounded-xl transition-colors text-zinc-400 hover:text-white"
+                >
+                  <span className="text-lg">{icon}</span>
+                  <span className="text-[11px] font-medium">{label}</span>
+                </Link>
+              ))}
+            </div>
+
             <p className="text-center text-xs text-zinc-500">Free to start. No sign up required.</p>
           </div>
         </div>
@@ -201,17 +220,6 @@ export default function Home() {
               <span>{icon}</span>
               <span>{label}</span>
             </div>
-          ))}
-        </div>
-        <div className="flex justify-center gap-6 mt-6">
-          {[
-            { href: "/tuner", label: "Tuner" },
-            { href: "/progress", label: "Progress" },
-            { href: "/settings", label: "Settings" },
-          ].map(({ href, label }) => (
-            <Link key={href} href={href} className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">
-              {label}
-            </Link>
           ))}
         </div>
       </footer>
