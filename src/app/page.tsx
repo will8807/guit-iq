@@ -1,99 +1,231 @@
 ﻿import Link from "next/link";
+import Image from "next/image";
 
-const STRINGS = [1, 2, 3, 4, 5, 6];
+// ─── Feature cards ────────────────────────────────────────────────────────────
 
-function DecorativeFretboard() {
-  return (
-    <div
-      aria-hidden="true"
-      className="w-full max-w-sm h-14 rounded-xl overflow-hidden relative"
-      style={{
-        background: "linear-gradient(to bottom, #1a1008, #2a1c0e, #1a1008)",
-        boxShadow: "inset 0 2px 8px rgba(0,0,0,0.8)",
-      }}
-    >
-      {STRINGS.map((s) => (
-        <div
-          key={s}
-          className="absolute left-0 right-0"
-          style={{
-            top: `${(s / (STRINGS.length + 1)) * 100}%`,
-            height: s <= 2 ? "1px" : s <= 4 ? "1.5px" : "2px",
-            background:
-              s <= 2
-                ? "rgba(156,163,175,0.7)"
-                : s <= 4
-                  ? "rgba(176,168,152,0.7)"
-                  : "rgba(200,184,106,0.7)",
-          }}
-        />
-      ))}
-      {[20, 40, 60, 80].map((pct) => (
-        <div
-          key={pct}
-          className="absolute top-0 bottom-0"
-          style={{ left: `${pct}%`, width: "1.5px", background: "rgba(200,191,176,0.45)" }}
-        />
-      ))}
-      <div
-        className="absolute top-0 bottom-0 left-0"
-        style={{ width: "6px", background: "rgba(240,235,220,0.25)" }}
-      />
-    </div>
-  );
-}
+const FEATURES = [
+  {
+    icon: "🎵",
+    label: "Find the Note",
+    description: "Hear a note and locate it anywhere on the fretboard.",
+    color: "text-violet-400",
+  },
+  {
+    icon: "🎯",
+    label: "Intervals",
+    description: "Identify intervals and build a stronger musical ear.",
+    color: "text-rust-400",
+  },
+  {
+    icon: "🎸",
+    label: "Chords",
+    description: "Hear a chord and find every note on the neck.",
+    color: "text-sky-400",
+  },
+  {
+    icon: "📈",
+    label: "Track & Improve",
+    description: "Detailed stats, streaks, and progress over time.",
+    color: "text-emerald-400",
+  },
+];
+
+// ─── Testimonials ─────────────────────────────────────────────────────────────
+// TODO: replace with real testimonials before uncommenting
+//
+// const TESTIMONIALS = [
+//   {
+//     quote: "Finally an ear training app that speaks guitarist.",
+//     name: "Alex M.",
+//     initials: "AM",
+//   },
+//   {
+//     quote: "My fretboard knowledge has leveled up so fast.",
+//     name: "Jason R.",
+//     initials: "JR",
+//   },
+//   {
+//     quote: "Simple, clean, and super effective. I use it every day.",
+//     name: "Maya L.",
+//     initials: "ML",
+//   },
+// ];
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#100c06] text-white flex flex-col items-center justify-center gap-6 px-6 py-12">
-      {/* Brand */}
-      <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-5xl font-black tracking-tight">
-          <span className="text-rust-300">Guit</span>IQ
-        </h1>
-        <p className="text-zinc-400 text-base max-w-xs">
-          The ear-training app built for guitarists
-        </p>
-      </div>
+    <main className="min-h-screen bg-[#100c06] text-white">
 
-      {/* Decorative mini fretboard */}
-      <DecorativeFretboard />
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden min-h-[88svh] flex flex-col">
 
-      {/* Feature pills */}
-      <div className="flex flex-wrap justify-center gap-2 max-w-xs">
-        {["🎵 Audio-first", "🎯 Find the note", "🎸 Chord training", "📈 Track progress"].map((f) => (
-          <span key={f} className="px-3 py-1.5 bg-zinc-800 rounded-full text-xs text-zinc-300 font-medium">
-            {f}
+        {/* Guitar photo background */}
+        <div className="absolute inset-0 pointer-events-none select-none">
+          <Image
+            src="/guitar-hero.webp"
+            alt=""
+            fill
+            priority
+            className="object-cover object-center opacity-35"
+          />
+          {/* Dark vignettes to blend the photo into the page */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#100c06]/30 via-transparent to-[#100c06]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#100c06] via-[#100c06]/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#100c06] via-transparent to-[#100c06]/20" />
+        </div>
+
+        {/* Nav bar */}
+        <nav className="relative z-10 flex items-center justify-between px-5 pt-5">
+          <h1 className="text-2xl font-black tracking-tight">
+            <span className="text-rust-400">Guit</span>IQ
+          </h1>
+          <span className="text-[11px] font-semibold text-zinc-400 border border-zinc-700 rounded-full px-3 py-1 flex items-center gap-1.5">
+            <span className="text-rust-400">🎸</span> Built for guitarists, by guitarists
           </span>
-        ))}
-      </div>
+        </nav>
 
-      {/* CTA card */}
-      <div className="w-full max-w-xs bg-zinc-900 border border-zinc-700/50 rounded-2xl p-5 flex flex-col gap-3 shadow-xl">
-        <Link
-          href="/session"
-          className="w-full text-center py-4 bg-rust-500 hover:bg-rust-400 active:bg-rust-600 rounded-xl text-lg font-black text-white transition-all shadow-md shadow-rust-800/40 hover:-translate-y-0.5 active:translate-y-0"
-        >
-          Start Training
-        </Link>
-        <div className="grid grid-cols-3 gap-2">
-          {[
-            { href: "/tuner", icon: "🎵", label: "Tuner" },
-            { href: "/progress", icon: "📈", label: "Progress" },
-            { href: "/settings", icon: "⚙️", label: "Settings" },
-            
-          ].map(({ href, icon, label }) => (
+        {/* Hero copy */}
+        <div className="relative z-10 flex flex-col justify-center flex-1 px-5 pb-4 pt-8 gap-6 max-w-lg">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-4xl font-black leading-tight tracking-tight">
+              Train your ear.
+            </h2>
+            <h2 className="text-4xl font-black leading-tight tracking-tight text-rust-400">
+              Find it on the neck.
+            </h2>
+          </div>
+
+          <p className="text-zinc-300 text-base leading-relaxed max-w-sm">
+            GuitIQ helps you hear notes, intervals, and chords — and instantly find them on the fretboard.
+          </p>
+
+          {/* Mini feature grid */}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+            {[
+              { icon: "🔊", label: "Audio-first training", sub: "Hear it. Don't just see it." },
+              { icon: "🎸", label: "Fretboard-based", sub: "Everything happens where you play." },
+              { icon: "📈", label: "Track progress", sub: "Watch your ear get sharper." },
+              { icon: "🔥", label: "Stay motivated", sub: "Streaks, stats, and daily challenges." },
+            ].map(({ icon, label, sub }) => (
+              <div key={label} className="flex items-start gap-2">
+                <span className="text-lg mt-0.5">{icon}</span>
+                <div>
+                  <p className="text-xs font-bold text-white leading-tight">{label}</p>
+                  <p className="text-[10px] text-zinc-500 leading-tight mt-0.5">{sub}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Primary CTA */}
+          <div className="flex flex-col gap-3">
             <Link
-              key={href}
-              href={href}
-              className="flex flex-col items-center gap-1 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-colors text-zinc-400 hover:text-white"
+              href="/session"
+              className="w-full text-center py-4 bg-rust-500 hover:bg-rust-400 active:bg-rust-600 rounded-xl text-lg font-black text-white transition-all shadow-lg shadow-rust-800/50 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
             >
-              <span className="text-xl">{icon}</span>
-              <span className="text-[10px] font-medium">{label}</span>
+              <span>🎸</span> Start Training <span className="text-rust-200">→</span>
             </Link>
+
+            {/* Secondary nav */}
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { href: "/tuner", icon: "🎵", label: "Tuner" },
+                { href: "/progress", icon: "📈", label: "Progress" },
+                { href: "/settings", icon: "⚙️", label: "Settings" },
+              ].map(({ href, icon, label }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="flex flex-col items-center gap-1.5 py-3 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 rounded-xl transition-colors text-zinc-400 hover:text-white"
+                >
+                  <span className="text-lg">{icon}</span>
+                  <span className="text-[11px] font-medium">{label}</span>
+                </Link>
+              ))}
+            </div>
+
+            <p className="text-center text-xs text-zinc-500">Free to start. No sign up required.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Feature cards ──────────────────────────────────────────────────── */}
+      <section className="px-5 py-12 flex flex-col gap-5 max-w-lg mx-auto">
+        <p className="text-center text-sm text-zinc-400 font-medium">
+          Everything you need to sharpen your ear on guitar.
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          {FEATURES.map(({ icon, label, description, color }) => (
+            <div
+              key={label}
+              className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col gap-2"
+            >
+              <span className={`text-2xl ${color}`}>{icon}</span>
+              <p className="font-bold text-sm text-white leading-tight">{label}</p>
+              <p className="text-[11px] text-zinc-400 leading-relaxed">{description}</p>
+            </div>
           ))}
         </div>
-      </div>
+      </section>
+
+      {/* ── Testimonials — hidden until real ones are collected ─────────────
+      <section className="px-5 py-8 flex flex-col gap-5 max-w-lg mx-auto">
+        <p className="text-center text-sm text-zinc-400 font-medium">Loved by guitarists</p>
+        <div className="flex flex-col gap-3">
+          {TESTIMONIALS.map(({ quote, name, initials }) => (
+            <div
+              key={name}
+              className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex items-start gap-3"
+            >
+              <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-zinc-300 shrink-0">
+                {initials}
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <p className="text-sm text-zinc-200 leading-snug">"{quote}"</p>
+                <p className="text-[11px] text-zinc-500">{name}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+      ── */}
+
+      {/* ── Bottom CTA ─────────────────────────────────────────────────────── */}
+      <section className="px-5 py-10 max-w-lg mx-auto">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col gap-4 items-center text-center">
+          <span className="text-3xl">⚡</span>
+          <div className="flex flex-col gap-1">
+            <h3 className="text-2xl font-black">Better ear. Better playing.</h3>
+            <p className="text-sm text-zinc-400">Start your journey today.</p>
+          </div>
+          <Link
+            href="/session"
+            className="w-full py-4 bg-rust-500 hover:bg-rust-400 active:bg-rust-600 rounded-xl text-base font-black text-white transition-all shadow-lg shadow-rust-800/50 hover:-translate-y-0.5 flex items-center justify-center gap-2"
+          >
+            <span>🎸</span> Start Training
+          </Link>
+          <p className="text-[11px] text-zinc-500">No login • 100% free to start</p>
+        </div>
+      </section>
+
+      {/* ── Footer ─────────────────────────────────────────────────────────── */}
+      <footer className="px-5 py-8 border-t border-zinc-800/60 max-w-lg mx-auto">
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { icon: "🌐", label: "Works in your browser" },
+            { icon: "📥", label: "No download needed" },
+            { icon: "📱", label: "Practice anywhere" },
+            { icon: "🔒", label: "Privacy focused" },
+          ].map(({ icon, label }) => (
+            <div key={label} className="flex items-center gap-2 text-xs text-zinc-500">
+              <span>{icon}</span>
+              <span>{label}</span>
+            </div>
+          ))}
+        </div>
+      </footer>
+
     </main>
   );
 }
