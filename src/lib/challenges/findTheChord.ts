@@ -108,7 +108,13 @@ export function generateChordChallenge(
     throw new Error(`No valid root found for chord "${chord.key}"`);
   }
 
-  const rootMidi = candidates[Math.floor(rand() * candidates.length)]!;
+  // Bias toward lower-register voicings (roots on strings 4–6, ≤ A3 = MIDI 57)
+  // so chords don't always sound on the treble strings.
+  // 60 % of the time: prefer low-register candidates if any exist.
+  const LOW_REGISTER_MAX_MIDI = 57; // A3
+  const lowCandidates = candidates.filter((m) => m <= LOW_REGISTER_MAX_MIDI);
+  const usePool = lowCandidates.length > 0 && rand() < 0.6 ? lowCandidates : candidates;
+  const rootMidi = usePool[Math.floor(rand() * usePool.length)]!;
   // buildChordVoicing already produces notes in ascending order
   const midiNotes = buildChordVoicing(rootMidi, chord.intervals);
   const pitchClasses = new Set(midiNotes.map((n) => n % 12));

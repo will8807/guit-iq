@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useCallback, useState, useRef } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useSessionStore } from "@/store/sessionStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { initAudio, playNote, playChord, playFeedbackChime } from "@/lib/audio/engine";
@@ -46,9 +46,6 @@ export default function SessionPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [overlayOpen, setOverlayOpen] = useState(false);
-  // Tracks whether a play was deferred because the how-to overlay was shown first
-  const deferredPlay = useRef(false);
 
   const { showRoot, setShowRoot, intervalMix, chordMix } = useSettingsStore();
 
@@ -96,19 +93,10 @@ export default function SessionPage() {
   // Auto-play when a new challenge starts
   useEffect(() => {
     if (phase === "playing") {
-      const HOW_TO_KEY = `guitiq_how_to_play_seen_${challenge?.type}`;
-      const alreadySeen = typeof window !== "undefined" && !!localStorage.getItem(HOW_TO_KEY);
-      if (!alreadySeen && challenge) {
-        // Overlay will appear — defer the play until the user dismisses it
-        deferredPlay.current = true;
-        setOverlayOpen(true);
-      } else {
-        deferredPlay.current = false;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        playChallenge();
-      }
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      playChallenge();
     }
-  }, [phase, playChallenge, challenge]);
+  }, [phase, playChallenge]);
 
   // Play feedback chime when answer is evaluated
   useEffect(() => {
@@ -200,13 +188,8 @@ export default function SessionPage() {
       highlights.push({ ...tap, variant: "hint" });
     }
     // When Show Root is ON, also highlight root positions
-    // Prefer strings 3–6 (a triad root on high e / B leaves no room below),
-    // but fall back to strings 1–2 when the note only exists that high.
     if (showRoot && !isPlaying) {
-      const allRootPositions = getAllPositionsForNote(challenge.rootNote);
-      const lowerPositions = allRootPositions.filter((p) => p.string > 2);
-      const rootPositions = lowerPositions.length > 0 ? lowerPositions : allRootPositions;
-      for (const pos of rootPositions) {
+      for (const pos of getAllPositionsForNote(challenge.rootNote)) {
         const alreadyTapped = chordTaps.some(
           (t) => t.string === pos.string && t.fret === pos.fret,
         );
@@ -374,21 +357,8 @@ export default function SessionPage() {
   return (
     <main className="min-h-screen w-full bg-[#100c06] text-white flex flex-col p-4 gap-4 max-w-2xl mx-auto">
       {/* How to play overlay — shown once on first session */}
-      {(phase === "playing" || phase === "awaiting") && challenge && (
-        <HowToPlayOverlay
-          challengeType={challenge.type}
-          forceOpen={helpOpen}
-          onOpen={() => setOverlayOpen(true)}
-          onDismiss={() => {
-            setHelpOpen(false);
-            setOverlayOpen(false);
-            // If audio was deferred while the overlay was showing, play now
-            if (deferredPlay.current) {
-              deferredPlay.current = false;
-              playChallenge();
-            }
-          }}
-        />
+      {phase === "awaiting" && challenge && (
+        <HowToPlayOverlay challengeType={challenge.type} forceOpen={helpOpen} onDismiss={() => setHelpOpen(false)} />
       )}
 
       {/* Promotion toast */}
