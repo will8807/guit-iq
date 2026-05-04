@@ -80,7 +80,7 @@ export default function Home() {
             <span className="text-rust-400">Guit</span>IQ
           </h1>
           <span className="text-[11px] font-semibold text-zinc-400 border border-zinc-700 rounded-full px-3 py-1 flex items-center gap-1.5">
-            <span className="text-rust-400">🎸</span> Built for guitarists
+            <span className="text-rust-400">🎸</span> Built for guitarists, by guitarists
           </span>
         </nav>
 
