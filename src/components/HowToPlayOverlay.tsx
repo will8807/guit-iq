@@ -54,10 +54,12 @@ export default function HowToPlayOverlay({ challengeType, forceOpen, onDismiss }
 
   useEffect(() => {
     const seen = localStorage.getItem(STORAGE_KEY(challengeType));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!seen) setVisible(true);
   }, [challengeType]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (forceOpen) setVisible(true);
   }, [forceOpen]);
 
@@ -104,7 +106,7 @@ export default function HowToPlayOverlay({ challengeType, forceOpen, onDismiss }
           onClick={dismiss}
           className="w-full py-3 bg-rust-500 hover:bg-rust-400 active:bg-rust-600 rounded-xl font-bold text-white transition-colors shadow-md shadow-rust-700/40"
         >
-          Got it — let's go!
+          Got it &mdash; let&apos;s go!
         </button>
 
         <p className="text-center text-xs text-zinc-600">Tap anywhere to dismiss</p>
